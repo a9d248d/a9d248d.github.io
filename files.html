@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Local File Uploader — Temporary Display with Descriptions</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#94a3b8;--accent:#7c3aed;--glass:rgba(255,255,255,0.03)}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;color:#e6eef8;background:linear-gradient(180deg,#071025 0%, #08121a 100%);}
+    .app{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px}
+    h1{font-size:18px;margin:0}
+    p.lead{margin:6px 0 18px;color:var(--muted)}
+
+    .uploader{display:grid;grid-template-columns:1fr 320px;gap:16px}
+    .drop{background:var(--card);border-radius:12px;padding:18px;border:1px dashed rgba(255,255,255,0.06);min-height:180px;display:flex;flex-direction:column;gap:12px}
+    .drop.dragover{border-color:rgba(124,58,237,0.9);box-shadow:0 6px 30px rgba(124,58,237,0.06);}
+    .controls{display:flex;gap:8px;align-items:center}
+    .btn{background:linear-gradient(180deg,var(--accent),#5b21b6);color:white;padding:8px 12px;border-radius:10px;border:0;cursor:pointer}
+    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    input[type=file]{display:none}
+
+    .meta{color:var(--muted);font-size:13px}
+
+    .list{background:var(--glass);padding:12px;border-radius:12px;min-height:150px;overflow:auto;max-height:66vh}
+    .card{display:flex;gap:12px;padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));align-items:flex-start}
+    .preview{width:120px;height:90px;border-radius:8px;flex:0 0 120px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.02);overflow:hidden}
+    .preview img, .preview video, .preview iframe{max-width:100%;max-height:100%;display:block}
+    .info{flex:1}
+    .info h3{margin:0;font-size:14px}
+    .info .meta{margin-top:6px}
+    .desc{margin-top:8px}
+    textarea{width:100%;min-height:56px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .card-footer{display:flex;gap:8px;align-items:center;margin-top:8px}
+    .small{font-size:12px;color:var(--muted)}
+    .actions{display:flex;gap:6px}
+    .pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);font-size:12px}
+
+    /* responsive */
+    @media (max-width:880px){.uploader{grid-template-columns:1fr;}.preview{width:100px;height:80px}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Local File Uploader — Temporary display</h1>
+        <p class="lead">Select or drop files. Add a description per file for temporary local display (no server upload).</p>
+      </div>
+    </header>
+
+    <section class="uploader" aria-label="File uploader">
+      <div>
+        <div id="drop" class="drop" tabindex="0">
+          <div class="controls">
+            <label for="fileInput" class="btn" role="button">Choose files</label>
+            <input id="fileInput" type="file" multiple />
+            <button id="clearAll" class="btn secondary" title="Remove all files">Clear all</button>
+            <button id="exportJSON" class="btn secondary" title="Export the current list (descriptions + metadata) as JSON">Export JSON</button>
+            <div style="flex:1"></div>
+            <div class="meta">Temporary — files are read locally and shown in memory only.</div>
+          </div>
+
+          <div class="meta">You can drag &amp; drop files into this box. Supported previews: images, audio, video, PDFs, plain text. Other files get a download link.</div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="list" id="fileList" aria-live="polite"></div>
+      </div>
+
+      <aside>
+        <div style="background:var(--card);padding:12px;border-radius:12px">
+          <h3 style="margin-top:0">Quick tips</h3>
+          <ul class="meta">
+            <li>Add descriptions to each file — they are kept only while the page is open.</li>
+            <li>Use the export button to download a JSON summary (does not include file binary data).</li>
+            <li>To keep a file, download it from its preview/card before clearing.</li>
+          </ul>
+          <hr style="border:none;height:1px;background:rgba(255,255,255,0.03);margin:12px 0">
+          <div class="meta small">Built as a single static HTML file — open it locally in any modern browser.</div>
+        </div>
+      </aside>
+    </section>
+
+  </div>
+
+  <script>
+    (function(){
+      const fileInput = document.getElementById('fileInput');
+      const drop = document.getElementById('drop');
+      const list = document.getElementById('fileList');
+      const clearAllBtn = document.getElementById('clearAll');
+      const exportBtn = document.getElementById('exportJSON');
+
+      // Internal state
+      const items = []; // {id, file, url, description, addedAt}
+
+      function humanSize(bytes){
+        if(bytes < 1024) return bytes + ' B';
+        const units = ['KB','MB','GB','TB'];
+        let i= -1; do { bytes = bytes / 1024; i++; } while(bytes >= 1024 && i < units.length-1);
+        return bytes.toFixed(2) + ' ' + units[i];
+      }
+
+      function addFiles(fileList){
+        const arr = Array.from(fileList);
+        arr.forEach(file => {
+          const id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2);
+          const url = URL.createObjectURL(file);
+          const obj = {id,file,url,description:'',addedAt: new Date().toISOString()};
+          items.push(obj);
+          renderItem(obj);
+        });
+      }
+
+      function renderItem(obj){
+        const {id,file,url,description,addedAt} = obj;
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.id = id;
+
+        const preview = document.createElement('div'); preview.className='preview';
+        // Preview by type
+        if(file.type.startsWith('image/')){
+          const img = document.createElement('img'); img.src = url; img.alt = file.name; preview.appendChild(img);
+        } else if(file.type.startsWith('video/')){
+          const v = document.createElement('video'); v.src = url; v.controls = true; preview.appendChild(v);
+        } else if(file.type.startsWith('audio/')){
+          const a = document.createElement('audio'); a.src = url; a.controls = true; preview.appendChild(a);
+        } else if(file.type === 'application/pdf'){
+          const ifr = document.createElement('iframe'); ifr.src = url; ifr.title = file.name; preview.appendChild(ifr);
+        } else if(file.type.startsWith('text/') && file.size < 200000){
+          // small text preview
+          const pre = document.createElement('pre'); pre.style.margin=0; pre.style.padding='8px'; pre.style.fontSize='12px'; pre.style.maxHeight='88px'; pre.style.overflow='auto';
+          // Read file content
+          const reader = new FileReader();
+          reader.onload = () => { pre.textContent = reader.result.slice(0,2000); }
+          reader.readAsText(file);
+          preview.appendChild(pre);
+        } else {
+          // generic icon + download link built in actions
+          const span = document.createElement('div'); span.className='pill'; span.textContent = file.type || 'file'; preview.appendChild(span);
+        }
+
+        const info = document.createElement('div'); info.className = 'info';
+        const title = document.createElement('h3'); title.textContent = file.name; info.appendChild(title);
+
+        const meta = document.createElement('div'); meta.className='meta'; meta.innerHTML = `${file.type || 'Unknown type'} • ${humanSize(file.size)} • added ${new Date(addedAt).toLocaleString()}`;
+        info.appendChild(meta);
+
+        const descWrap = document.createElement('div'); descWrap.className='desc';
+        const ta = document.createElement('textarea'); ta.placeholder = 'Add a description for this file (temporary)'; ta.value = description || '';
+        ta.addEventListener('input', ()=>{
+          const it = items.find(x=>x.id===id); if(it) it.description = ta.value;
+        });
+        descWrap.appendChild(ta);
+        info.appendChild(descWrap);
+
+        const footer = document.createElement('div'); footer.className='card-footer';
+        const small = document.createElement('div'); small.className='small'; small.textContent = 'Preview & actions'; footer.appendChild(small);
+
+        const actions = document.createElement('div'); actions.className='actions';
+        const dl = document.createElement('a'); dl.className='btn secondary'; dl.textContent='Download'; dl.href = url; dl.download = file.name; actions.appendChild(dl);
+        const remove = document.createElement('button'); remove.className='btn secondary'; remove.textContent='Remove'; remove.addEventListener('click', ()=> removeItem(id)); actions.appendChild(remove);
+        footer.appendChild(actions);
+
+        card.appendChild(preview);
+        card.appendChild(info);
+        card.appendChild(footer);
+
+        list.appendChild(card);
+        // Scroll into view
+        card.scrollIntoView({behavior:'smooth', block:'nearest'});
+      }
+
+      function removeItem(id){
+        const idx = items.findIndex(x=>x.id===id);
+        if(idx === -1) return;
+        const it = items[idx];
+        // revoke URL
+        URL.revokeObjectURL(it.url);
+        items.splice(idx,1);
+        const el = list.querySelector(`[data-id='${id}']`);
+        if(el) el.remove();
+      }
+
+      function clearAll(){
+        items.forEach(it=>URL.revokeObjectURL(it.url));
+        items.length = 0;
+        list.innerHTML = '';
+      }
+
+      function exportJSON(){
+        const exportData = items.map(it=>({name: it.file.name, size: it.file.size, type: it.file.type, description: it.description, addedAt: it.addedAt}));
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
+        const u = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = u; a.download = 'files-summary.json'; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(u), 5000);
+      }
+
+      // Event wiring
+      fileInput.addEventListener('change', (e)=>{ addFiles(e.target.files); fileInput.value=''; });
+
+      // drag/drop
+      ['dragenter','dragover'].forEach(ev=>{
+        drop.addEventListener(ev, (e)=>{ e.preventDefault(); e.stopPropagation(); drop.classList.add('dragover'); });
+      });
+      ['dragleave','drop'].forEach(ev=>{
+        drop.addEventListener(ev, (e)=>{ e.preventDefault(); e.stopPropagation(); drop.classList.remove('dragover'); });
+      });
+      drop.addEventListener('drop', (e)=>{ const dt = e.dataTransfer; if(dt && dt.files) addFiles(dt.files); });
+
+      clearAllBtn.addEventListener('click', ()=>{ if(!items.length) return; if(!confirm('Remove all files from the temporary list?')) return; clearAll(); });
+      exportBtn.addEventListener('click', ()=>{ if(!items.length){ alert('No items to export'); return; } exportJSON(); });
+
+      // Accessibility: allow pressing Enter key on drop area to open file picker
+      drop.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { fileInput.click(); } });
+
+      // prevent navigation away with files still in memory (optional)
+      window.addEventListener('beforeunload', (e)=>{
+        if(items.length){ e.preventDefault(); e.returnValue = ''; }
+      });
+
+    })();
+  </script>
+</body>
+</html>
