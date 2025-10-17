@@ -133,7 +133,7 @@
           const a = document.createElement('audio'); a.src = url; a.controls = true; preview.appendChild(a);
         } else if(file.type === 'application/pdf'){
           const ifr = document.createElement('iframe'); ifr.src = url; ifr.title = file.name; preview.appendChild(ifr);
-        } else if(file.type.startsWith('text/') && file.size < 200000){
+        } else if(file.type.startsWith('text/') && file.size < 400000){
           // small text preview
           const pre = document.createElement('pre'); pre.style.margin=0; pre.style.padding='8px'; pre.style.fontSize='12px'; pre.style.maxHeight='88px'; pre.style.overflow='auto';
           // Read file content
@@ -215,22 +215,20 @@
         }));
 
         zip.file("summary.json", JSON.stringify(summary, null, 2));
-
-  // Add files
-  for(const it of items){
-    zip.file(it.file.name, it.file);
-  }
-
-  const blob = await zip.generateAsync({type:"blob"});
-  const u = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = u;
-  a.download = 'files_bundle.zip';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(u), 5000);
-}
+        // Add files
+        for(const it of items){
+          zip.file(it.file.name, it.file);
+        }
+        const blob = await zip.generateAsync({type:"blob"});
+        const u = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = u;
+        a.download = 'files_bundle.zip';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(u), 5000);
+      }
 
       // Event wiring
       fileInput.addEventListener('change', (e)=>{ addFiles(e.target.files); fileInput.value=''; });
@@ -244,7 +242,7 @@
       });
       drop.addEventListener('drop', (e)=>{ const dt = e.dataTransfer; if(dt && dt.files) addFiles(dt.files); });
 
-      clearAllBtn.addEventListener('click', ()=>{ if(!items.length) return; if(!confirm('Remove all files from the temporary list?')) return; clearAll(); });
+      clearAllBtn.addEventListener('click', ()=>{ if(!items.length) return; if(!confirm('Remove all files from the list?')) return; clearAll(); });
       exportBtn.addEventListener('click', ()=>{ if(!items.length){ alert('No items to export'); return; } exportJSON(); });
       exportZipBtn.addEventListener('click', exportZIP);
 
