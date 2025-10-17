@@ -135,7 +135,7 @@
           const ifr = document.createElement('iframe'); ifr.src = url; ifr.title = file.name; preview.appendChild(ifr);
         } else if(file.type.startsWith('text/') && file.size < 400000){
           // small text preview
-          const pre = document.createElement('pre'); pre.style.margin=0; pre.style.padding='8px'; pre.style.fontSize='12px'; pre.style.maxHeight='88px'; pre.style.overflow='auto';
+          const pre = document.createElement('pre'); pre.style.margin=0; pre.style.padding='8px'; pre.style.fontSize='12px'; pre.style.maxHeight='178px'; pre.style.overflow='auto';
           // Read file content
           const reader = new FileReader();
           reader.onload = () => { pre.textContent = reader.result.slice(0,2000); }
