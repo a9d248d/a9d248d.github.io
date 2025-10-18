@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Random Weather — Forecast Simulator</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#94a3b8;--accent:#7c3aed;}
+    *{box-sizing:border-box}
+    body{font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; color:#e6eef8;background:linear-gradient(180deg,#071025 0%, #08121a 100%);}
+    .app{max-width:980px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px}
+    h1{font-size:20px;margin:0}
+    .controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+    input[type="text"]{padding:10px 12px;border-radius:10px;border:1px solid #e6eef6;background:#fffborder:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;min-width:160px}
+    button{background:var(--accent);color:#fff;border:none;padding:10px 12px;border-radius:10px;cursor:pointer}
+    button.secondary{background:transparent;color:var(--accent);border:1px solid rgba(3,105,161,0.12)}
+
+    .card{background:var(--card);border-radius:14px;padding:18px;margin-top:18px;box-shadow:0 6px 18px rgba(2,6,23,0.06);display:grid;grid-template-columns:1fr 320px;gap:18px}
+    .main-forecast{display:flex;flex-direction:column;gap:8px}
+    .current{display:flex;align-items:center;gap:18px}
+    .temp{font-size:56px;font-weight:600;line-height:1}
+    .condition{font-size:18px;color:var(--muted)}
+    .meta{display:flex;gap:12px;color:var(--muted);font-size:13px;flex-wrap:wrap}
+    .icon-wrap{width:110px;height:110px;display:flex;align-items:center;justify-content:center;border-radius:16px}
+    .hourly{margin-top:8px;display:flex;gap:8px;overflow:auto;padding-bottom:8px}
+    .hour{min-width:72px;color:#e6eef8;background:linear-gradient(180deg,#071025 0%, #08121a 100%);border-radius:10px;padding:10px;text-align:center}
+    .hour .h{font-size:13px;color:var(--muted)}
+    .hour .t{font-weight:600;font-size:15px}
+
+    .side{padding:12px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);height:100%}
+    .detail{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #eef6ff}
+    footer{margin-top:14px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+
+    .daily{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px;}
+    .day{color:#e6eef8;background:linear-gradient(180deg,#071025 0%, #08121a 100%);border-radius:8px;padding:10px;text-align:center;font-size:13px}
+
+    .share{display:flex;gap:8px}
+    .small{font-size:12px;color:var(--muted)}
+
+    /* backgrounds per condition */
+    .bg-clear{background:linear-gradient(180deg,#fff9e644,#e6f6ff88)}
+    .bg-clouds{background:linear-gradient(180deg,#f0f3f744,#eef6ff88)}
+    .bg-rain{background:linear-gradient(180deg,#eef6fb44,#e6f3ff88)}
+    .bg-snow{background:linear-gradient(180deg,#f7fbff44,#f0f6fb88)}
+
+    @media (max-width:880px){
+      .card{grid-template-columns:1fr}
+      .side{order:3}
+      .daily{grid-template-columns:repeat(4,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M6 14l4-8 4 8H6z" fill="#0369a1" opacity="0.12"/></svg>
+      <div>
+        <h1>Weather Forecast</h1>
+        <div class="small">Forecast for today & tomorrow</div>
+      </div>
+
+      <div class="controls">
+        <input id="locationInput" type="text" placeholder="Enter city (optional)" aria-label="location input" />
+        <button id="generateBtn">Generate</button>
+        <button id="copyBtn" class="secondary">Copy text</button>
+      </div>
+    </header>
+
+    <div id="forecastCard" class="card bg-clear" role="region" aria-live="polite">
+      <section class="main-forecast">
+        <div class="current">
+          <div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="icon-wrap" id="bigIcon" aria-hidden></div>
+              <div>
+                <div id="loc" style="font-weight:700;font-size:15px">Somewhere</div>
+                <div class="condition" id="condition">Partly cloudy · Today</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-left:auto;text-align:left">
+            <div class="temp" id="temp">21℃</div>
+            <div style="margin-left:auto;text-align:left" class="small" id="feels">Feels like 20℃ ·m dity 55%</div>
+          </div>
+        </div>
+
+        <div class="hourly" id="hourly"></div>
+
+        <div class="daily" id="daily"></div>
+      </section>
+
+      <aside class="side">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:600">Details</div>
+          <div class="small" id="updated">Updated just now</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="detail"><div>Precipitation</div><div id="precip">0%</div></div>
+          <div class="detail"><div>Wind</div><div id="wind">5 km/h S</div></div>
+          <div class="detail"><div>Pressure</div><div id="pressure">1016 hPa</div></div>
+          <div class="detail"><div>Sunrise / Sunset</div><div id="sun">06:14 · 18:09</div></div>
+          <div class="detail"><div>Visibility</div><div id="vis">10 km</div></div>
+        </div>
+
+        <footer>
+          <div class="share">
+            <button id="regenSmall" class="secondary">New</button>
+          </div>
+        </footer>
+      </aside>
+    </div>
+
+    <div style="margin-top:10px;text-align:center;color:var(--muted);font-size:13px">Tip: press Generate or enter a city and press Enter to get a new plausible forecast.</div>
+  </div>
+
+<script>
+(function(){
+  // Helper random
+  function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+  function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+  function pad(n){return n<10?('0'+n):n}
+
+  const conditions = [
+    {id:'Clear', icon:sunIcon, bg:'bg-clear', ranges:{temp:[18,34],precip:[0,5]}},
+    {id:'Partly Cloudy', icon:partlyIcon, bg:'bg-clouds', ranges:{temp:[12,28],precip:[0,10]}},
+    {id:'Cloudy', icon:cloudIcon, bg:'bg-clouds', ranges:{temp:[5,22],precip:[0,20]}},
+    {id:'Light Rain', icon:rainIcon, bg:'bg-rain', ranges:{temp:[8,19],precip:[30,70]}},
+    {id:'Heavy Rain', icon:rainIcon, bg:'bg-rain', ranges:{temp:[6,16],precip:[60,95]}},
+    {id:'Thunderstorm', icon:stormIcon, bg:'bg-rain', ranges:{temp:[18,30],precip:[50,90]}},
+    {id:'Snow', icon:snowIcon, bg:'bg-snow', ranges:{temp:[-10,2],precip:[40,90]}},
+    {id:'Fog', icon:fogIcon, bg:'bg-clouds', ranges:{temp:[0,12],precip:[0,20]}}
+  ];
+
+  const windDirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+
+  const el = {
+    loc: document.getElementById('loc'),
+    condition: document.getElementById('condition'),
+    temp: document.getElementById('temp'),
+    feels: document.getElementById('feels'),
+    hourly: document.getElementById('hourly'),
+    daily: document.getElementById('daily'),
+    bigIcon: document.getElementById('bigIcon'),
+    precip: document.getElementById('precip'),
+    wind: document.getElementById('wind'),
+    pressure: document.getElementById('pressure'),
+    sun: document.getElementById('sun'),
+    vis: document.getElementById('vis'),
+    updated: document.getElementById('updated'),
+    card: document.getElementById('forecastCard'),
+    locationInput: document.getElementById('locationInput')
+  };
+
+  document.getElementById('generateBtn').addEventListener('click', gen);
+  document.getElementById('regenSmall').addEventListener('click', gen);
+  document.getElementById('copyBtn').addEventListener('click', copyText);
+  el.locationInput.addEventListener('keydown', function(e){ if(e.key==='Enter') gen(); });
+
+  function gen(){
+    const customLoc = el.locationInput.value.trim();
+    const now = new Date();
+
+    // pick condition, but bias by month for plausibility
+    const month = now.getMonth(); //0-11
+    // Simple seasonal bias for snow in winter months
+    let pool = conditions.slice();
+    if(month>=11||month<=1){ // dec-jan-feb
+      pool = pool.filter(c=>c.id==='Snow'||c.id==='Cloudy'||c.id==='Light Rain'||c.id==='Partly Cloudy' || c.id==='Fog');
+    } else if(month>=5 && month<=8){ // summer
+      pool = pool.filter(c=>c.id!=='Snow');
+    }
+    const cond = pick(pool);
+
+    // temperature range
+    const tMin = cond.ranges.temp[0];
+    const tMax = cond.ranges.temp[1];
+    const temperature = rand(tMin,tMax);
+    const feelsLike = temperature + (rand(-2,2));
+
+    // precip chance
+    const precip = rand(cond.ranges.precip[0], cond.ranges.precip[1]);
+
+    // wind
+    const windSpd = rand(0,40);
+    const windDir = pick(windDirs);
+
+    // pressure & visibility
+    const pressure = rand(990,1035);
+    const visKm = (precip>60)? rand(1,6) : rand(7,20);
+
+    // sunrise/sunset estimation (simple)
+    const sunriseHour = rand(5,7);
+    const sunsetHour = rand(17,20);
+    const sunrise = pad(sunriseHour) + ':' + pad(rand(0,59));
+    const sunset = pad(sunsetHour) + ':' + pad(rand(0,59));
+
+    // hourly timeline (next 12 hours)
+    const hours = [];
+    for(let i=0;i<12;i++){
+      const d = new Date(now.getTime() + i*60*60*1000);
+      const label = (d.getHours()===0)?'12 AM':(d.getHours()<12?d.getHours()+' AM':(d.getHours()===12?'12 PM':(d.getHours()-12)+' PM'));
+      // small variance by hour
+      const t = Math.round(temperature + (Math.sin(i/3)*2) + rand(-1,2));
+      const p = Math.max(0, Math.min(100, Math.round(precip + rand(-15,15))));
+      const iconChoice = (p>60)?'Rain':(cond.id==='Snow'?'Snow':(p>25?'Rain':cond.id));
+      hours.push({label:label,temp:t,precip:p,icon:iconChoice});
+    }
+
+    // 7-day forecast
+    const days = [];
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    for(let d=0; d<7; d++){
+      const date = new Date(now.getTime() + d*24*60*60*1000);
+      const name = dayNames[date.getDay()];
+      const high = rand(tMin+2, tMax+4);
+      const low = rand(Math.max(-20,tMin-6), high-4);
+      const p = rand(Math.max(0,precip-20), Math.min(100, precip+30));
+      days.push({name,high,low,precip:p});
+    }
+
+    // update DOM
+    el.loc.textContent = customLoc || pick(['Springfield','Riverton','Grand City','Lakeside','Hillview','Northport','Midtown']);
+    el.condition.textContent = cond.id + ' · ' + now.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'});
+    el.temp.textContent = temperature + '℃';
+    el.feels.textContent = 'Feels like ' + feelsLike + '℃ · Humidity ' + rand(30,94) + '%';
+
+    // big icon
+    el.bigIcon.innerHTML = cond.icon(60);
+
+    // style background
+    el.card.className = 'card ' + cond.bg;
+
+    // hourly
+    el.hourly.innerHTML = '';
+    hours.forEach(h=>{
+      const div = document.createElement('div'); div.className='hour';
+      div.innerHTML = `<div class="h">${h.label}</div><div class="t">${h.temp}℃</div><div class="small">${h.precip}%</div>`;
+      el.hourly.appendChild(div);
+    });
+
+    // daily
+    el.daily.innerHTML = '';
+    days.forEach(d=>{
+      const div = document.createElement('div'); div.className='day';
+      div.innerHTML = `<div style="font-weight:600">${d.name}</div><div class="small">H ${d.high}° · L ${d.low}°</div><div class="small">${d.precip}% precip</div>`;
+      el.daily.appendChild(div);
+    });
+
+    el.precip.textContent = precip + '%';
+    el.wind.textContent = windSpd + ' km/h ' + windDir;
+    el.pressure.textContent = pressure + ' hPa';
+    el.sun.textContent = sunrise + ' · ' + sunset;
+    el.vis.textContent = visKm + ' km';
+    el.updated.textContent = 'Updated ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+    // store current forecast for copy/export
+    window._currentForecast = {location:el.loc.textContent, condition:cond.id, temp:temperature, feelsLike, precip, wind:
+      {speed:windSpd, dir:windDir}, pressure, sunrise, sunset, visibility:visKm, hourly:hours, daily:days, timestamp: now.toISOString() };
+  }
+
+  function copyText(){
+    if(!window._currentForecast) return gen();
+    const f = window._currentForecast;
+    const text = `${f.location} — ${f.condition}\n${f.temp} (Feels like ${f.feelsLike})\nPrecip ${f.precip}% · Wind ${f.wind.speed} ${f.wind.dir} · ${f.pressure} hPa\nUpdated: ${new Date(f.timestamp).toLocaleString()}`;
+    navigator.clipboard?.writeText(text).then(()=>{
+      const cb = document.getElementById('copyBtn');
+      const old = cb.textContent; cb.textContent='Copied!'; setTimeout(()=>cb.textContent=old,1200);
+    }).catch(()=>alert(text));
+  }
+
+  // icon functions (SVG strings)
+  function sunIcon(size){return `
+    <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="4.2" fill="#FDBA74" />
+      <g stroke="#FDBA74" stroke-width="1.2" stroke-linecap="round">
+        <path d="M12 1.8v2.4"/>
+        <path d="M12 19.8v2.4"/>
+        <path d="M4.2 4.2l1.7 1.7"/>
+        <path d="M18.1 18.1l1.7 1.7"/>
+        <path d="M1.8 12h2.4"/>
+        <path d="M19.8 12h2.4"/>
+        <path d="M4.2 19.8l1.7-1.7"/>
+        <path d="M18.1 5.9l1.7-1.7"/>
+      </g>
+    </svg>`}
+
+  function partlyIcon(size){return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" aria-hidden>
+      <g>
+        <ellipse cx="20" cy="20" rx="8" ry="8" fill="#FFD166" />
+        <path d="M10 36c0-6 5-11 11-11h8c6 0 11 5 11 11v2H10v-2z" fill="#E6EEF6" />
+      </g>
+    </svg>`}
+
+  function cloudIcon(size){return `
+    <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M20 17H7a4 4 0 010-8 5 5 0 019.9 1A3.5 3.5 0 0120 17z" fill="#CBD5E1" />
+    </svg>`}
+
+  function rainIcon(size){return `
+    <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M20 16H6a4 4 0 010-8 5 5 0 019.9 1A3.5 3.5 0 0120 16z" fill="#94A3B8" />
+      <path d="M8 18v2M12 18v3M16 18v2" stroke="#2563EB" stroke-linecap="round" stroke-width="1.4"/>
+    </svg>`}
+
+  function stormIcon(size){return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" aria-hidden>
+      <path d="M10 34c0-8 6-14 14-14 4 0 7 1.6 9.5 4.2C40 26 46 28 46 34H10z" fill="#94A3B8"/>
+      <path d="M30 38l-4 8h6l-2 6" fill="#F59E0B"/>
+    </svg>`}
+
+  function snowIcon(size){return `
+    <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M20 16H7a4 4 0 010-8 5 5 0 119.9 1A3.5 3.5 0 0120 16z" fill="#C7E0F4" />
+      <g stroke="#60A5FA" stroke-linecap="round" stroke-width="1.2">
+        <path d="M8 19h0"/>
+        <path d="M12 19h0"/>
+        <path d="M16 19h0"/>
+      </g>
+    </svg>`}
+
+  function fogIcon(size){return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" aria-hidden>
+      <path d="M14 34c0-8 6-14 14-14 4 0 7 1.6 9.5 4.2C44 26 50 28 50 34H14z" fill="#E6EEF6"/>
+      <rect x="10" y="38" width="44" height="4" rx="2" fill="#E5E7EB"/>
+      <rect x="6" y="46" width="52" height="4" rx="2" fill="#E5E7EB"/>
+    </svg>`}
+
+  // initial generate
+  gen();
+})();
+</script>
+</body>
+</html>
