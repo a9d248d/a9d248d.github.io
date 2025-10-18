@@ -68,7 +68,7 @@
     </header>
 
     <div id="forecastCard" class="card bg-clear" role="region" aria-live="polite">
-      <section class="main-forecast">
+      <section class="main-forecast" style="width:100%;">
         <div class="current">
           <div>
             <div style="display:flex;gap:8px;align-items:center">
@@ -90,8 +90,9 @@
 
         <div class="daily" id="daily"></div>
       </section>
-
-      <aside class="side">
+      
+    </div>
+    <aside class="side">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="font-weight:600">Details</div>
           <div class="small" id="updated">Updated just now</div>
@@ -111,7 +112,6 @@
           </div>
         </footer>
       </aside>
-    </div>
 
     <div style="margin-top:10px;text-align:center;color:var(--muted);font-size:13px">Tip: press Generate or enter a city and press Enter to get a new plausible forecast.</div>
   </div>
@@ -222,7 +222,7 @@
     }
 
     // update DOM
-    el.loc.textContent = customLoc || pick(['Springfield','Riverton','Grand City','Lakeside','Hillview','Northport','Midtown']);
+    el.loc.textContent = customLoc || pick(["['Bradford','Ballater','Wheldrake','Baerney','Kamouraska','Bailymena','Falkirk','Aeredale','Satbury','Armskirk','Nantwich','Kirkwall','Romsey','Kilmarnock']","Norbury","Dry Gulch","Bamburgh","Accreton","Foolshope","Haling Cove","Martslock","Graycott","Clare View Point","Helmfirth","Llyn","Davenport","Dungannon","Orrinshire","Helmfirth","Bamborough","Glaenarm","Eastcliff","Onryx","Dunwich","Everton","Moressley","Holmfirth","Banrockburn","Fanfoss"]);
     el.condition.textContent = cond.id + ' · ' + now.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'});
     el.temp.textContent = temperature + '℃';
     el.feels.textContent = 'Feels like ' + feelsLike + '℃ · Humidity ' + rand(30,94) + '%';
