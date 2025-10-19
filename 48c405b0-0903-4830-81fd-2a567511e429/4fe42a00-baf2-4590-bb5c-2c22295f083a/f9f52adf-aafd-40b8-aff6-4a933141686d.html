@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Game Changelog Builder</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --muted:#94a3b8; --accent:#7c3aed; --accent-2:#06b6d4; --text:#e6eef8;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; margin:0;background:linear-gradient(180deg,#071023 0%, #061226 100%); color:var(--text); min-height:100vh;}
+    .wrap{max-width:1100px;margin:32px auto;padding:20px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between}
+    h1{font-size:20px;margin:0}
+    .sub{color:var(--muted);font-size:13px}
+
+    .controls{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+
+    input[type=text], input[type=date], select, textarea{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;color:var(--text);min-width:160px}
+    textarea{min-height:84px;resize:vertical}
+    button{background:var(--accent);border:none;color:white;padding:8px 12px;border-radius:10px;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+    .sidebar .card{padding:12px}
+
+    .filters{display:flex;gap:8px;flex-wrap:wrap}
+    .tag{padding:6px 10px;border-radius:999px;font-weight:600;font-size:13px}
+    .tag.feature{background:linear-gradient(90deg,var(--accent),#5b21b6)}
+    .tag.bug{background:linear-gradient(90deg,#ef4444,#dc2626)}
+    .tag.editor{background:linear-gradient(90deg,#f59e0b,#d97706)}
+    .tag.other{background:linear-gradient(90deg,var(--accent-2),#0ea5b7)}
+
+    .versions{margin-top:12px}
+    .version{margin-bottom:12px;border-left:3px solid rgba(255,255,255,0.04);padding:12px 12px 12px 18px;border-radius:8px}
+    .version-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .version-meta{color:var(--muted);font-size:13px}
+    .entries{margin-top:8px}
+    .entry{display:flex;gap:12px;align-items:flex-start;padding:10px;border-radius:8px;margin-bottom:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);}
+    .entry .left{width:84px}
+    .entry .body{flex:1}
+    .entry .actions{display:flex;gap:8px}
+    .small{font-size:13px;color:var(--muted)}
+
+    .search{flex:1;display:flex;gap:8px}
+    .footer-ctrls{display:flex;gap:8px;align-items:center}
+
+    .controls-row{display:flex;gap:8px;align-items:center}
+
+    .note{color:var(--muted);font-size:13px;margin-top:8px}
+
+    /* responsive */
+    @media (max-width:900px){.grid{grid-template-columns:1fr;}.sidebar{order:2}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Game Changelog Builder</h1>
+        <div class="sub">Compose versioned changelogs with features, bugfixes, editor notes and more. Saved locally.</div>
+      </div>
+      <div class="small">Tip: use <strong>Export Markdown</strong> to paste into release notes</div>
+    </header>
+
+    <section class="grid">
+      <main>
+        <div class="card">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+            <div class="search">
+              <input id="searchInput" type="text" placeholder="Search titles or descriptions..." oninput="render()">
+            </div>
+            <div class="controls-row">
+              <label class="small">Show:</label>
+              <label><input type="checkbox" class="filterType" value="feature" checked onchange="render()"> Features</label>
+              <label><input type="checkbox" class="filterType" value="bug" checked onchange="render()"> Bugfixes</label>
+              <label><input type="checkbox" class="filterType" value="editor" checked onchange="render()"> Editor Notes</label>
+              <label><input type="checkbox" class="filterType" value="other" checked onchange="render()"> Other</label>
+            </div>
+          </div>
+
+          <div id="versionsList" class="versions"></div>
+
+          <div class="note">You can reorder entries inside a version using the up/down arrows. Everything persists to browser localStorage.</div>
+        </div>
+      </main>
+
+      <aside class="sidebar">
+        <div class="card">
+          <h3 style="margin-top:0">Quick add</h3>
+          <div style="display:grid;gap:8px">
+            <label>Version
+              <input id="inputVersion" type="text" placeholder="e.g. 1.4.0" />
+            </label>
+            <label>Date
+              <input id="inputDate" type="date" />
+            </label>
+            <label>Type
+              <select id="inputType">
+                <option value="feature">New Feature</option>
+                <option value="bug">Bugfix</option>
+                <option value="editor">Editor Note</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label>Title
+              <input id="inputTitle" type="text" placeholder="Short title" />
+            </label>
+            <label>Description (Markdown supported)
+              <textarea id="inputDesc" placeholder="Describe the change... (supports **bold**, *italic*, lists)"></textarea>
+            </label>
+            <div style="display:flex;gap:8px">
+              <button onclick="quickAdd()">Add to version</button>
+              <button class="ghost" onclick="clearQuick()">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h4 style="margin:0 0 8px">Export / Import</h4>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="exportJSON()">Export JSON</button>
+            <button onclick="exportMarkdown()">Export Markdown</button>
+            <button onclick="exportHTML()">Export HTML</button>
+            <button class="ghost" onclick="print()">Print</button>
+            <label class="ghost" style="padding:6px 10px;border-radius:8px;cursor:pointer">
+              Import JSON <input id="importFile" type="file" accept="application/json" style="display:none" onchange="importJSON(event)">
+            </label>
+          </div>
+          <div class="note">Exported Markdown follows a readable release style. Import will replace current data unless merged.</div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h4 style="margin:0 0 8px">Saved data</h4>
+          <div id="storageInfo" class="small"></div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="ghost" onclick="resetData()">Reset</button>
+            <button class="ghost" onclick="downloadSample()">Load Sample</button>
+          </div>
+        </div>
+
+      </aside>
+    </section>
+
+  </div>
+
+  <script>
+    // Minimal markdown renderer using marked (if available) or fallback
+    // We use a lightweight in-browser approach: if `marked` library isn't present, a tiny fallback will sanitize basic markdown-like transformations.
+
+    // Data model: versions: array sorted by date desc. Each version has id, version, date, entries: [{id,type,title,desc}]
+    const STORAGE_KEY = 'game_changelog_v1';
+
+    function uid(prefix='id'){return prefix+'_'+Math.random().toString(36).slice(2,9)}
+
+    function saveData(data){localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); updateStorageInfo();}
+    function loadData(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return [];
+      try{return JSON.parse(raw)}catch(e){console.error('parse',e);return []}
+    }
+
+    function updateStorageInfo(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const el = document.getElementById('storageInfo');
+      if(!raw){el.textContent='No saved changelog in localStorage.';return}
+      try{const size = new Blob([raw]).size; el.textContent = `Saved entries: ${JSON.parse(raw).reduce((a,v)=>a+v.entries.length,0)} • JSON ${size} bytes` }catch(e){el.textContent='Saved data (corrupted)'}
+    }
+
+    // add or find version
+    function getOrCreateVersion(version, date){
+      let data = loadData();
+      let v = data.find(x=>x.version===version);
+      if(!v){ v = {id:uid('v'), version:version||('Unreleased'), date:date||new Date().toISOString().slice(0,10), entries:[]}; data.push(v); saveData(data); }
+      return v;
+    }
+
+    function quickAdd(){
+      const version = document.getElementById('inputVersion').value.trim() || 'Unreleased';
+      const date = document.getElementById('inputDate').value || new Date().toISOString().slice(0,10);
+      const type = document.getElementById('inputType').value;
+      const title = document.getElementById('inputTitle').value.trim();
+      const desc = document.getElementById('inputDesc').value.trim();
+      if(!title){alert('Please enter a title for the entry.');return}
+      let data = loadData();
+      let v = data.find(x=>x.version===version);
+      if(!v){ v = {id:uid('v'), version, date, entries:[]}; data.push(v); }
+      v.date = date; // update date
+      v.entries.unshift({id:uid('e'), type, title, desc});
+      // sort versions by date desc then version name
+      data.sort((a,b)=> (b.date||'') .localeCompare(a.date||'') || b.version.localeCompare(a.version));
+      saveData(data);
+      clearQuick(); render();
+    }
+
+    function clearQuick(){document.getElementById('inputTitle').value='';document.getElementById('inputDesc').value='';}
+
+    function render(){
+      const list = document.getElementById('versionsList'); list.innerHTML='';
+      let data = loadData();
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const filters = Array.from(document.querySelectorAll('.filterType:checked')).map(n=>n.value);
+
+      // show versions
+      data.forEach(v=>{
+        // filter entries
+        const matchedEntries = v.entries.filter(e=>{
+          if(!filters.includes(e.type)) return false;
+          if(!query) return true;
+          return (e.title||'').toLowerCase().includes(query) || (e.desc||'').toLowerCase().includes(query) || (v.version||'').toLowerCase().includes(query);
+        });
+        if(matchedEntries.length===0) return; // skip version
+
+        const verEl = document.createElement('div'); verEl.className='version card';
+        const header = document.createElement('div'); header.className='version-header';
+        const left = document.createElement('div');
+        left.innerHTML = `<div style="font-weight:700">${escapeHtml(v.version)}</div><div class="version-meta">${v.date}</div>`;
+        header.appendChild(left);
+        const right = document.createElement('div');
+        const addBtn = document.createElement('button'); addBtn.textContent='Add entry'; addBtn.onclick=()=>prefillAdd(v.version,v.date);
+        const exportBtn = document.createElement('button'); exportBtn.textContent='Copy Markdown'; exportBtn.className='ghost'; exportBtn.onclick=()=>copyText(markdownForVersion(v));
+        right.appendChild(addBtn); right.appendChild(exportBtn);
+        header.appendChild(right);
+        verEl.appendChild(header);
+
+        const entriesEl = document.createElement('div'); entriesEl.className='entries';
+        matchedEntries.forEach((e,idx)=>{
+          const ent = document.createElement('div'); ent.className='entry';
+          const left = document.createElement('div'); left.className='left';
+          const tag = document.createElement('div'); tag.className='tag '+e.type; tag.textContent = e.type==='feature' ? 'Feature' : e.type==='bug'? 'Bug' : e.type==='editor'? 'Editor' : 'Other';
+          left.appendChild(tag);
+          ent.appendChild(left);
+
+          const body = document.createElement('div'); body.className='body';
+          const title = document.createElement('div'); title.style.fontWeight='700'; title.textContent = e.title;
+          const desc = document.createElement('div'); desc.className='small'; desc.innerHTML = renderMarkdown(e.desc || '');
+          body.appendChild(title); body.appendChild(desc);
+          ent.appendChild(body);
+
+          const acts = document.createElement('div'); acts.className='actions';
+          const up = document.createElement('button'); up.textContent='▲'; up.title='Move up'; up.onclick=()=>moveEntry(v.id,e.id,-1);
+          const down = document.createElement('button'); down.textContent='▼'; down.title='Move down'; down.onclick=()=>moveEntry(v.id,e.id,1);
+          const edit = document.createElement('button'); edit.textContent='Edit'; edit.className='ghost'; edit.onclick=()=>editEntry(v.id,e.id);
+          const del = document.createElement('button'); del.textContent='Delete'; del.className='ghost'; del.onclick=()=>deleteEntry(v.id,e.id);
+          acts.appendChild(up); acts.appendChild(down); acts.appendChild(edit); acts.appendChild(del);
+          ent.appendChild(acts);
+
+          entriesEl.appendChild(ent);
+        });
+        verEl.appendChild(entriesEl);
+        list.appendChild(verEl);
+      });
+
+      updateStorageInfo();
+    }
+
+    function prefillAdd(version,date){document.getElementById('inputVersion').value=version;document.getElementById('inputDate').value=date;window.scrollTo({top:0,behavior:'smooth'});}
+
+    function renderMarkdown(text){
+      if(window.marked){ try{return marked.parse(text || '') }catch(e){return escapeHtml(text)} }
+      // fallback simple transforms: bold, italics, line breaks, bullets
+      let out = escapeHtml(text || '');
+      out = out.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      out = out.replace(/\*(.+?)\*/g,'<em>$1</em>');
+      out = out.replace(/^\s*\-\s(.+)$/gm,'<li>$1</li>');
+      out = out.replace(/(?:\r\n|\r|\n)/g,'<br>');
+      if(out.includes('<li>')) out = '<ul>'+out.replace(/(<br>)*/g,'')+'</ul>';
+      return out;
+    }
+
+    function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    function moveEntry(vid,eid,dir){
+      let data = loadData(); const v = data.find(x=>x.id===vid); if(!v) return; const idx = v.entries.findIndex(x=>x.id===eid); if(idx===-1) return; const newIdx = idx+dir; if(newIdx<0||newIdx>=v.entries.length) return; const [item] = v.entries.splice(idx,1); v.entries.splice(newIdx,0,item); saveData(data); render();
+    }
+
+    function editEntry(vid,eid){
+      const data = loadData(); const v = data.find(x=>x.id===vid); if(!v) return; const e = v.entries.find(x=>x.id===eid); if(!e) return;
+      const title = prompt('Edit title', e.title); if(title===null) return; const desc = prompt('Edit description (markdown)', e.desc||''); if(desc===null) return; e.title = title.trim(); e.desc = desc; saveData(data); render();
+    }
+
+    function deleteEntry(vid,eid){ if(!confirm('Delete this entry?')) return; let data=loadData(); const v = data.find(x=>x.id===vid); if(!v) return; v.entries = v.entries.filter(x=>x.id!==eid); if(v.entries.length===0){data = data.filter(x=>x.id!==vid)} saveData(data); render(); }
+
+    // exports
+    function exportJSON(){ const data = loadData(); const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='changelog.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+
+    function importJSON(ev){ const f = ev.target.files && ev.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = e=>{ try{ const parsed = JSON.parse(e.target.result); if(!Array.isArray(parsed)) throw new Error('Invalid format'); if(!confirm('Import will replace current data. Continue?')) return; saveData(parsed); render(); alert('Imported.'); }catch(err){alert('Failed to import: '+err.message)} } ; reader.readAsText(f);
+    }
+
+    function exportMarkdown(){ const data = loadData(); if(!data.length){alert('No data to export.');return}
+      const md = data.map(v=>markdownForVersion(v)).join('\n\n'); copyText(md); alert('Markdown copied to clipboard (also shown in a new window).'); const w = window.open('about:blank','_blank'); w.document.write('<pre style="white-space:pre-wrap;font-family:monospace">'+escapeHtml(md)+'</pre>');
+    }
+
+    function markdownForVersion(v){
+      const lines = [];
+      lines.push(`# ${v.version} — ${v.date}`);
+      const groups = {feature:[], bug:[], editor:[], other:[]};
+      v.entries.forEach(e=>groups[e.type].push(e));
+      if(groups.feature.length){ lines.push('\n## New features'); groups.feature.forEach(e=>lines.push(`- **${e.title}**${e.desc? ' — '+stripMarkdown(e.desc):''}`)); }
+      if(groups.bug.length){ lines.push('\n## Bugfixes'); groups.bug.forEach(e=>lines.push(`- **${e.title}**${e.desc? ' — '+stripMarkdown(e.desc):''}`)); }
+      if(groups.editor.length){ lines.push('\n## Editor notes'); groups.editor.forEach(e=>lines.push(`- **${e.title}**${e.desc? ' — '+stripMarkdown(e.desc):''}`)); }
+      if(groups.other.length){ lines.push('\n## Other'); groups.other.forEach(e=>lines.push(`- **${e.title}**${e.desc? ' — '+stripMarkdown(e.desc):''}`)); }
+      return lines.join('\n');
+    }
+    function stripMarkdown(s){ return s.replace(/\*\*/g,'').replace(/\*/g,'').replace(/\[(.*?)\]\((.*?)\)/g,'$1').replace(/\n/g,' ')}
+
+    function exportHTML() {
+  const data = loadData(); // Must return an array of versions
+  const escapeHtml = str =>
+    String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const html = `
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Changelog</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; padding: 20px; color: #111; }
+      h1 { font-size: 20px; margin-bottom: 4px; }
+      h2 { margin-top: 12px; }
+      small { color: #666; font-size: 12px; }
+      div { margin-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    ${data.map(v => `
+      <section>
+        <h1>${escapeHtml(v.version)} — ${escapeHtml(v.date)}</h1>
+        ${v.entries.map(e => `
+          <h2>${escapeHtml(e.title)} <small>(${escapeHtml(e.type)})</small></h2>
+          <div>${escapeHtml(e.desc)}</div>
+        `).join('')}
+      </section>
+    `).join('')}
+  </body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'changelog.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+
+    function copyText(t){ navigator.clipboard?.writeText(t).catch(()=>{}); }
+
+    function resetData(){ if(!confirm('Reset and delete all saved changelog data?')) return; localStorage.removeItem(STORAGE_KEY); render(); }
+
+    function downloadSample(){ const sample = [
+      {id:uid('v'), version:'1.4.0', date:'2025-10-01', entries:[
+        {id:uid('e'), type:'feature', title:'New AI companion', desc:'Introduced an AI companion that helps players learn mechanics.\n- Comes with toggles for difficulty'},
+        {id:uid('e'), type:'bug', title:'Fixed crash when opening inventory', desc:'Crash occurred when inventory had >255 items. Fixed memory overflow.'},
+        {id:uid('e'), type:'editor', title:'Map editor: grid toggle', desc:'Added grid snap toggle for precise placement.'}
+      ]}
+    ]; saveData(sample); render(); }
+
+    function stripHTML(s){ return s.replace(/<[^>]+>/g,''); }
+
+    // small util
+    function stripMarkdown(s){ return (s||'').replace(/\*\*/g,'').replace(/\*/g,'').replace(/\[(.*?)\]\((.*?)\)/g,'$1').replace(/\n/g,' ');
+    }
+
+    // boot
+    (function(){ if(!localStorage.getItem(STORAGE_KEY)) downloadSample(); render();
+      // detect marked.js availability; offer to load
+      const markedURL = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+      fetch(markedURL, {method:'HEAD'}).then(()=>{
+        const s = document.createElement('script'); s.src = markedURL; s.onload = ()=>{ console.log('marked loaded'); render(); }; document.head.appendChild(s);
+      }).catch(()=>{});
+    })();
+
+    // friendly print wrapper
+    function print(){ window.print(); }
+
+    // expose for console debugging
+    window._changelog = {loadData, saveData, render};
+  </script>
+</body>
+</html>
