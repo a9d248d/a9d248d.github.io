@@ -425,7 +425,7 @@ Local public services include ${schools.length} schools, ${hospitals} hospital(s
 
     randomizeBtn.addEventListener('click', ()=>{
       // randomize controls
-      document.getElementById('townName').value = pick(makeRNG(Math.random()), towns);
+      document.getElementById('townName').value = pick(makeRNG(Math.random()*1000), towns);
       document.getElementById('population').value = 500 + Math.round(Math.random()*95000);
       document.getElementById('area').value = round(1 + Math.random()*250,1);
       document.getElementById('seed').value = Math.floor(Math.random()*999999);
@@ -509,7 +509,7 @@ Local public services include ${schools.length} schools, ${hospitals} hospital(s
     });
 
     // initialize with a sample town
-    document.getElementById('townName').value = pick(makeRNG(Math.random()*100), towns);
+    document.getElementById('townName').value = pick(makeRNG(Math.random()*1000), towns);
     generateBtn.click();
   </script>
 </body>
