@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fictional Town Generator</title>
+  <!-- Basic styling for readability -->
+  <style>
+    :root{--accent:#7c3aed;--muted:#94a3b8}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    header,body{color:#e6eef8;background:linear-gradient(180deg,#071025 0%, #08121a 100%);padding:14px 20px}
+    .wrap{display:grid;gap:12px;padding:12px;box-sizing:border-box;width:100%;}
+    .panel{background:#0b1220;border:1px solid #e6e6e6;border-radius:8px;padding:12px;overflow:auto;color:#e6eef8}
+    .controls{width:360px;min-width:280px}
+    .preview{flex:1;display:flex;flex-direction:column}
+    .output{width:420px;min-width:300px}
+    label{display:block;font-weight:600;margin-top:10px}
+    input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:inherit;margin-top:6px;box-sizing:border-box}
+    button{background:var(--accent);color:white;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+    .muted{color:var(--muted);font-size:13px}
+    .row{display:flex;gap:8px}
+    .small{width:120px}
+    .summary{padding:12px;background:rgba(255,255,255,0.02);border:1px dashed #cfe8ff;border-radius:6px;margin-top:10px}
+    .section-title{font-size:16px;margin-top:12px}
+    .chart-wrap{height:220px}
+    pre{white-space:pre-wrap;background:#0f1724;color:#e6eef8;padding:12px;border-radius:6px;font-size:13px}
+    .export-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    footer{font-size:12px;color:#555;padding:8px}
+  </style>
+  <!-- Chart.js from CDN (used for quick charts) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <strong>Fictional Town Generator</strong>
+    <div class="muted" style="margin-top:6px">Generate extremely detailed, exportable data profiles for an imaginary town — demographics, economy, infrastructure, environment, budgets and more.</div>
+  </header>
+
+  <div class="wrap">
+    <!-- Controls -->
+    <div class="panel controls">
+      <h3>Generation Controls</h3>
+      <label>Town name</label>
+      <input id="townName" placeholder="E.g. Willowbrook" />
+
+      <div class="row">
+        <div style="flex:1">
+          <label>Population</label>
+          <input id="population" type="number" value="8500" />
+        </div>
+        <div class="small">
+          <label>Area km²</label>
+          <input id="area" type="number" value="24.3" step="0.1" />
+        </div>
+      </div>
+
+      <label>Seed (optional)</label>
+      <input id="seed" placeholder="random or numeric seed (e.g. 42)" />
+
+      <label>Profile complexity</label>
+      <select id="complexity">
+        <option value="basic">Basic (fast)</option>
+        <option value="full" selected>Full (comprehensive)</option>
+        <option value="deep">Deep (time series + details)</option>
+      </select>
+
+      <label>Primary economy focus</label>
+      <select id="economyFocus">
+        <option>Mixed</option>
+        <option>Agriculture</option>
+        <option>Tourism</option>
+        <option>Manufacturing</option>
+        <option>Tech/Remote</option>
+        <option>Mining</option>
+      </select>
+
+      <label>Region (for climate presets)</label>
+      <select id="region">
+        <option value="temperate" selected>Temperate</option>
+        <option value="arid">Arid</option>
+        <option value="tropical">Tropical</option>
+        <option value="continental">Continental</option>
+        <option value="subarctic">Subarctic</option>
+      </select>
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="generateBtn">Generate</button>
+        <button id="randomizeBtn" style="background:#4b5563">Randomize</button>
+      </div>
+
+      <div class="section-title">Quick modifiers</div>
+      <div class="row">
+        <div style="flex:1">
+          <label>Median income (optional)</label>
+          <input id="medianIncome" placeholder="e.g. 42000" />
+        </div>
+        <div style="width:120px">
+          <label>Unemployment (%)</label>
+          <input id="unemp" placeholder="e.g. 5.2" />
+        </div>
+      </div>
+
+      <div class="section-title">Advanced options</div>
+      <label><input id="includeTimeSeries" type="checkbox" /> Include 5-year time series for key metrics</label>
+      <label><input id="includeBudget" type="checkbox" checked /> Include municipal budget breakdown</label>
+      <label><input id="includeGIS" type="checkbox" /> Include simple geo footprint (GeoJSON)</label>
+
+      <div class="muted" style="margin-top:10px">Outputs: structured JSON, CSV export, printable report, charts and interactive preview. Save the page to keep it offline.</div>
+    </div>
+
+    <!-- Preview -->
+    <div class="panel preview">
+      <h3>Preview & Visuals</h3>
+      <div class="summary" id="summaryBox">No town generated yet — click Generate.</div>
+
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <div style="flex:1">
+          <div class="section-title">Key facts</div>
+          <div id="facts"></div>
+        </div>
+        <div style="flex:1">
+          <div class="section-title">Charts</div>
+          <div class="chart-wrap"><canvas id="chartAge"></canvas></div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="section-title">Narrative summary</div>
+        <div id="narrative" style="padding:10px;background:rgba(255,255,255,0.02);border-radius:6px"></div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button id="exportJSON">Export JSON</button>
+        <button id="exportCSV" style="background:#0ea5a4">Export CSV</button>
+        <button id="printReport" style="background:#7c3aed">Printable Report</button>
+        <div class="muted">(all exports generated client-side)</div>
+      </div>
+
+    </div>
+
+    <!-- Output JSON / raw data -->
+    <div class="panel output">
+      <h3>Raw data</h3>
+      <div class="muted">Generated JSON (editable)</div>
+      <textarea id="jsonOut" style="height:64%;font-family:monospace;margin-top:8px"></textarea>
+      <div style="margin-top:8px">
+        <label>CSV rows: choose which sections to flatten</label>
+        <select id="csvSection">
+          <option value="demographics">Demographics</option>
+          <option value="economy">Economy</option>
+          <option value="services">Public Services</option>
+          <option value="points">Points of Interest</option>
+        </select>
+        <div class="export-row">
+          <button id="downloadCSV">Download CSV (selected)</button>
+          <button id="downloadAllCSV" style="background:#d97706">Download CSV (all flattened)</button>
+        </div>
+      </div>
+      <footer>Tip: save this HTML file and open locally to generate reports without server.</footer>
+    </div>
+  </div>
+
+  <script>
+    // Utility: deterministic pseudo-random number generator from seed
+    function makeRNG(seed) {
+      let s = 0;
+      if (seed === undefined || seed === null || seed === '') {
+        s = Math.floor(Math.random() * 1e9);
+      } else if (isNaN(seed)) {
+        // string -> numeric
+        for (let i=0;i<seed.length;i++) s = (s<<5) - s + seed.charCodeAt(i);
+        s = Math.abs(s);
+      } else s = Number(seed);
+      return function() {
+        // xorshift
+        s ^= s << 13; s ^= s >>> 17; s ^= s << 5;
+        return (s >>> 0) / 4294967295;
+      }
+    }
+
+    // Helpers
+    function pick(rng, arr) { return arr[Math.floor(rng()*arr.length)]; }
+    function round(num,dec=0){ const p=Math.pow(10,dec); return Math.round(num*p)/p; }
+
+    // Generate a comprehensive town profile
+    function generateProfile(options){
+      const rng = makeRNG(options.seed);
+      const pop = options.population;
+      const area = options.area;
+      const density = round(pop / area, 1);
+
+      // Demographics
+      const ageBands = ["0-9","10-19","20-34","35-49","50-64","65+"];
+      // reasonable distribution
+      let ageDistribution = [];
+      let remaining = 1;
+      for (let i=0;i<ageBands.length;i++){
+        const v = (i===ageBands.length-1) ? remaining : round(Math.max(0.03, rng()*0.3),3);
+        ageDistribution.push({band:ageBands[i], share:round(v*100,1)});
+        remaining = round(Math.max(0, remaining - v),3);
+      }
+      // Normalize to 100
+      const totalShare = ageDistribution.reduce((s,a)=>s+a.share,0);
+      ageDistribution = ageDistribution.map(a=>({band:a.band, share:round(a.share*100/totalShare,1)}));
+
+      // Gender
+      const maleShare = round(48 + rng()*6,1);
+      const femaleShare = round(100 - maleShare,1);
+
+      // Households
+      const households = Math.max( Math.round(pop / (2.6 + rng()*0.8)), 200 );
+      const avgHouseholdSize = round(pop / households,2);
+
+      // Housing stock
+      const housing = {
+        totalUnits: Math.round(households * (1 + rng()*0.05)),
+        ownerOccupiedShare: round(50 + rng()*30,1),
+        types: [
+          {type:'Detached houses',share:round(40 + rng()*30,1)},
+          {type:'Apartments',share:round(15 + rng()*20,1)},
+          {type:'Townhouses',share:round(5 + rng()*15,1)},
+          {type:'Mobile homes',share:round(2 + rng()*6,1)},
+        ]
+      };
+
+      // Economy
+      const sectors = ['Agriculture','Manufacturing','Retail','Healthcare','Education','Tech','Tourism','Public administration','Construction','Transport'];
+      // Make employment sector shares
+      const sectorShares = sectors.map(s=>({sector:s, share:round(Math.max(0.3, rng()*12),1)}));
+      // boost based on focus
+      if (options.economyFocus && options.economyFocus !== 'Mixed'){
+        sectorShares.forEach(s=>{ if (s.sector.toLowerCase().includes(options.economyFocus.toLowerCase())) s.share += 12; });
+      }
+      // Normalize
+      const totalSector = sectorShares.reduce((s,a)=>s+a.share,0);
+      sectorShares.forEach(s=> s.share = round(s.share*100/totalSector,1));
+
+      const medianIncome = options.medianIncome || Math.round(30000 + rng()*40000);
+      const unemployment = options.unemployment !== undefined ? Number(options.unemployment) : round(2 + rng()*9,1);
+
+      // Major employers (3-8)
+      const employers = [];
+      const numEmp = 3 + Math.floor(rng()*6);
+      for (let i=0;i<numEmp;i++) employers.push({name: `${pick(rng, ['North','East','Central','Willow','Silver','Maple','Riverside','Pioneer'])} ${pick(rng,['Foods','Manufacturing','Hospital','College','Logistics','Tech','Resort','Mills'])}`, employees: Math.max( Math.round(rng()*pop*0.06), 12)});
+
+      // Public services
+      const schools = [];
+      const numSchools = 2 + Math.floor(rng()*4);
+      for(let i=0;i<numSchools;i++) schools.push({name:`${pick(rng,['Lincoln','Adams','Jefferson','Roosevelt','Maple','Pine','Valley'])} ${pick(rng,['Elementary','Middle School','High School'])}`, students: Math.max( Math.round(rng()*1200), 120)});
+
+      const hospitals = Math.max(0, Math.round((pop/15000) * (1 + rng()*1.2)));
+      const policeStations = Math.max(1, Math.round(pop/10000));
+      const fireStations = Math.max(1, Math.round(pop/12000));
+
+      // Infrastructure
+      const roads = {
+        primaryKm: round(5 + rng()*50,1),
+        secondaryKm: round(10 + rng()*100,1),
+        bridges: Math.round(rng()*8)
+      };
+
+      // Transport: transit presence
+      const transit = {
+        hasBus: rng() > 0.4,
+        hasRail: rng() > 0.85,
+        nearestAirportKm: Math.round(10 + rng()*120)
+      };
+
+      // Environment & geography
+      const lat = round( (rng()*140 - 70), 5 );
+      const lon = round( (rng()*360 - 180), 5 );
+      const elevation = Math.round(Math.abs(Math.round(rng()*800)));
+
+      // Climate simplified
+      const climate = (()=>{
+        const r = options.region || 'temperate';
+        if (r==='temperate') return {type:'Temperate', avgTempC: round(10 + rng()*10,1), annualPrecipMm: Math.round(500 + rng()*700)};
+        if (r==='arid') return {type:'Arid', avgTempC: round(15 + rng()*15,1), annualPrecipMm: Math.round(100 + rng()*200)};
+        if (r==='tropical') return {type:'Tropical', avgTempC: round(24 + rng()*5,1), annualPrecipMm: Math.round(1200 + rng()*2000)};
+        if (r==='subarctic') return {type:'Subarctic', avgTempC: round(-8 + rng()*8,1), annualPrecipMm: Math.round(200 + rng()*300)};
+        return {type:'Continental', avgTempC: round(5 + rng()*18,1), annualPrecipMm: Math.round(400 + rng()*800)};
+      })();
+
+      // Budget
+      const budget = {};
+      if (options.includeBudget){
+        const revenue = Math.round(pop * (1000 + rng()*7000));
+        const expenditure = Math.round(revenue * (0.95 + rng()*0.15));
+        budget.revenue = revenue; budget.expenditure = expenditure;
+        budget.breakdown = [
+          {category:'Public safety', share:round(18 + rng()*6,1)},
+          {category:'Education', share:round(20 + rng()*8,1)},
+          {category:'Public works', share:round(12 + rng()*6,1)},
+          {category:'Health & social services', share:round(8 + rng()*5,1)},
+          {category:'Parks & culture', share:round(6 + rng()*4,1)},
+          {category:'Debt & finance', share:round(8 + rng()*6,1)},
+          {category:'Other', share:round(10 + rng()*8,1)}
+        ];
+        const brTot = budget.breakdown.reduce((s,a)=>s+a.share,0);
+        budget.breakdown.forEach(b=> b.share = round(b.share*100/brTot,1));
+      }
+
+      // Points of interest
+      const pois = [];
+      const poiTypes = ['Park','Museum','Historic Site','Nature Reserve','Trail','Ski Resort','Beach','Market','Theatre'];
+      const numPois = 6 + Math.floor(rng()*8);
+      for (let i=0;i<numPois;i++) pois.push({name:`${pick(rng,['Old','New','Grand','River','Silver','Cedar','Bright'])} ${pick(rng,['Park','Theatre','Museum','Harbor','Market','Gardens'])}`, type: pick(rng, poiTypes), visitorsPerYear: Math.round(rng()*50000)});
+
+      // Crime & safety
+      const crime = {crimeRatePer1000: round(2 + rng()*18,2), violentShare: round(10 + rng()*25,1), propertyShare: round(60 + rng()*30,1)};
+
+      // Business licenses sample
+      const businesses = [];
+      const numBiz = Math.max(20, Math.round(pop/200));
+      for (let i=0;i<numBiz;i++) businesses.push({name:`${pick(rng,['Blue','Corner','Green','Golden','Sunrise','Atlas','Pioneer'])} ${pick(rng,['Bakery','Auto','Pharmacy','Inn','Bistro','Consulting','Market','Studio'])}`, sector: pick(rng, sectors), employees: Math.max(1, Math.round(rng()*80))});
+
+      // Time series (if requested) for last 5 years
+      let timeSeries = null;
+      if (options.includeTimeSeries){
+        const years = [];
+        const thisYear = new Date().getFullYear();
+        const basePop = pop;
+        for (let y=0;y<5;y++){
+          const year = thisYear - (4-y);
+          const growth = 1 + (rng()*0.03 - 0.01); // -1% to +2%
+          const p = Math.round(basePop * Math.pow(growth, y));
+          years.push({year:year, population:p, unemployment: round(Math.max(1, unemployment + (rng()*2-1)),1), medianIncome: Math.round(medianIncome * (1 + (rng()*0.03))) });
+        }
+        timeSeries = years;
+      }
+
+      // Geo footprint
+      let geojson = null;
+      if (options.includeGIS){
+        // generate a simple rough polygon circle around lat/lon using small jitter
+        const coords = [];
+        const rkm = Math.max(0.5, Math.sqrt(area / Math.PI));
+        for (let a=0;a<360;a+=30){
+          const rad = a * Math.PI/180;
+          const jitter = 0.6 + rng()*0.8;
+          const latp = lat + (Math.cos(rad) * rkm * 0.009 * jitter);
+          const lonp = lon + (Math.sin(rad) * rkm * 0.012 * jitter);
+          coords.push([round(lonp,5), round(latp,5)]);
+        }
+        coords.push(coords[0]);
+        geojson = {type:'FeatureCollection', features:[{type:'Feature', properties:{name:options.name||'Town footprint'}, geometry:{type:'Polygon', coordinates:[coords]}}]};
+      }
+
+      // Narrative generator (brief)
+      const narrative = `${options.name || 'The town'} is a ${pop.toLocaleString()}-person community covering ${area} km² (density ${density} /km²). The local economy is ${options.economyFocus.toLowerCase()}-oriented with median income around $${medianIncome.toLocaleString()} and unemployment near ${unemployment}%.
+
+Local public services include ${schools.length} schools, ${hospitals} hospital(s) and a basic emergency services network. The climate is ${climate.type} with average yearly temperature ${climate.avgTempC}°C and ${climate.annualPrecipMm} mm precipitation. Notable points of interest include ${pois.slice(0,3).map(p=>p.name).join(', ')}.`;
+
+      // Assemble profile
+      const profile = {
+        meta:{generatedAt: (new Date()).toISOString(), seed: options.seed || null, complexity: options.complexity, region: options.region},
+        basic:{name: options.name || 'Unnamed', population: pop, areaKm2: area, populationDensity_perKm2: density},
+        demographics:{ageDistribution: ageDistribution, maleShare: maleShare, femaleShare: femaleShare, households: households, avgHouseholdSize: avgHouseholdSize, housingStock: housing},
+        economy:{medianIncome: medianIncome, unemploymentPercent: unemployment, sectorShares: sectorShares, majorEmployers: employers, businessesSample: businesses.slice(0,50)},
+        publicServices:{schools: schools, hospitals: hospitals, policeStations: policeStations, fireStations: fireStations},
+        infrastructure:{roads:roads, transit:transit},
+        environment:{lat:lat,lon:lon,elevationMeters:elevation,climate:climate},
+        budget: budget,
+        pointsOfInterest: pois,
+        crime: crime,
+        timeSeries: timeSeries,
+        geojson: geojson,
+        narrative: narrative
+      };
+
+      return profile;
+    }
+
+    // UI wiring
+    const generateBtn = document.getElementById('generateBtn');
+    const randomizeBtn = document.getElementById('randomizeBtn');
+    const summaryBox = document.getElementById('summaryBox');
+    const factsDiv = document.getElementById('facts');
+    const narrativeDiv = document.getElementById('narrative');
+    const jsonOut = document.getElementById('jsonOut');
+    const chartAgeCtx = document.getElementById('chartAge').getContext('2d');
+    let ageChart = null;
+
+    function readOptions(){
+      return {
+        name: document.getElementById('townName').value || 'Willowbrook',
+        population: Number(document.getElementById('population').value) || 5000,
+        area: Number(document.getElementById('area').value) || 15,
+        seed: document.getElementById('seed').value || undefined,
+        complexity: document.getElementById('complexity').value,
+        economyFocus: document.getElementById('economyFocus').value,
+        region: document.getElementById('region').value,
+        medianIncome: document.getElementById('medianIncome').value || null,
+        unemployment: document.getElementById('unemp').value || undefined,
+        includeTimeSeries: document.getElementById('includeTimeSeries').checked,
+        includeBudget: document.getElementById('includeBudget').checked,
+        includeGIS: document.getElementById('includeGIS').checked
+      }
+    }
+
+    function renderProfile(profile){
+      summaryBox.innerHTML = `<strong>${profile.basic.name}</strong> — population ${profile.basic.population.toLocaleString()}, area ${profile.basic.areaKm2} km²`;
+
+      factsDiv.innerHTML = `<div class="muted">Density: ${profile.basic.populationDensity_perKm2}/km² • Median income: $${profile.economy.medianIncome.toLocaleString()} • Unemployment: ${profile.economy.unemploymentPercent}%</div>
+      <div style="margin-top:8px">Households: ${profile.demographics.households.toLocaleString()} • Avg household size: ${profile.demographics.avgHouseholdSize}</div>
+      <div style="margin-top:8px">Schools: ${profile.publicServices.schools.length} • Hospitals: ${profile.publicServices.hospitals}</div>`;
+
+      narrativeDiv.textContent = profile.narrative;
+
+      // Age chart
+      const labels = profile.demographics.ageDistribution.map(a=>a.band);
+      const data = profile.demographics.ageDistribution.map(a=>a.share);
+      if (ageChart) ageChart.destroy();
+      ageChart = new Chart(chartAgeCtx, {type:'bar', data:{labels:labels,datasets:[{label:'Population % by age band',data:data}]}, options:{responsive:true,maintainAspectRatio:false}});
+
+      jsonOut.value = JSON.stringify(profile, null, 2);
+    }
+
+    generateBtn.addEventListener('click', ()=>{
+      const opts = readOptions();
+      const profile = generateProfile(opts);
+      renderProfile(profile);
+    });
+
+    randomizeBtn.addEventListener('click', ()=>{
+      // randomize controls
+      document.getElementById('townName').value = pick(makeRNG(Math.random()), ['Willowbrook','Rivermoor','Cedarfield','Lakehaven','Stonebridge','Briar Glen']);
+      document.getElementById('population').value = 500 + Math.round(Math.random()*95000);
+      document.getElementById('area').value = round(1 + Math.random()*250,1);
+      document.getElementById('seed').value = Math.floor(Math.random()*999999);
+    });
+
+    // Export handlers
+    function download(filename, text){
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([text], {type:'text/plain'}));
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    document.getElementById('exportJSON').addEventListener('click', ()=>{
+      download('town-profile.json', jsonOut.value);
+    });
+
+    // CSV flatten: simple converter for chosen section
+    function toCSVSection(profile, section){
+      const rows = [];
+      if (section === 'demographics'){
+        rows.push(['field','value']);
+        rows.push(['population', profile.basic.population]);
+        rows.push(['area_km2', profile.basic.areaKm2]);
+        rows.push(['population_density', profile.basic.populationDensity_perKm2]);
+        profile.demographics.ageDistribution.forEach(a=> rows.push([`age_${a.band}`, a.share]));
+        rows.push(['male_share', profile.demographics.maleShare]);
+        rows.push(['female_share', profile.demographics.femaleShare]);
+        rows.push(['households', profile.demographics.households]);
+      } else if (section === 'economy'){
+        rows.push(['sector','share']);
+        profile.economy.sectorShares.forEach(s=> rows.push([s.sector, s.share]));
+      } else if (section === 'services'){
+        rows.push(['type','name','value']);
+        profile.publicServices.schools.forEach(s=> rows.push(['school', s.name, s.students]));
+        rows.push(['hospitals','count', profile.publicServices.hospitals]);
+      } else if (section === 'points'){
+        rows.push(['name','type','visitorsPerYear']);
+        profile.pointsOfInterest.forEach(p=> rows.push([p.name, p.type, p.visitorsPerYear]));
+      }
+      return rows.map(r => r.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+    }
+
+    document.getElementById('exportCSV').addEventListener('click', ()=>{
+      try{
+        const profile = JSON.parse(jsonOut.value);
+        const csv = toCSVSection(profile, 'demographics');
+        download('town-demographics.csv', csv);
+      }catch(e){alert('Invalid JSON: regenerate or fix it.');}
+    });
+
+    document.getElementById('downloadCSV').addEventListener('click', ()=>{
+      try{
+        const profile = JSON.parse(jsonOut.value);
+        const section = document.getElementById('csvSection').value;
+        const csv = toCSVSection(profile, section);
+        download('town-'+section+'.csv', csv);
+      }catch(e){alert('Invalid JSON: regenerate or fix it.');}
+    });
+
+    document.getElementById('downloadAllCSV').addEventListener('click', ()=>{
+      try{
+        const profile = JSON.parse(jsonOut.value);
+        // flatten several arrays into CSV with headings
+        let csv = 'section,name,type,value\n';
+        profile.pointsOfInterest.forEach(p=> csv += `points,"${p.name}",${p.type},${p.visitorsPerYear}\n`);
+        profile.economy.sectorShares.forEach(s=> csv += `economy,${s.sector},share,${s.share}\n`);
+        profile.publicServices.schools.forEach(s=> csv += `services,${s.name},students,${s.students}\n`);
+        download('town-all-flattened.csv', csv);
+      }catch(e){alert('Invalid JSON: regenerate or fix it.');}
+    });
+
+    document.getElementById('printReport').addEventListener('click', ()=>{
+      const profile = jsonOut.value;
+      const w = window.open('','_blank');
+      w.document.write('<pre>' + profile.replace(/</g,'&lt;') + '</pre>');
+      w.document.title = 'Town report';
+      w.print();
+    });
+
+    // initialize with a sample town
+    document.getElementById('townName').value = 'Willowbrook';
+    generateBtn.click();
+  </script>
+</body>
+</html>
