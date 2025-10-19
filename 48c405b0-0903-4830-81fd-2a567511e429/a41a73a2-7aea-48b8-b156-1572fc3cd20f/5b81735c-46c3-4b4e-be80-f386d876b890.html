@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Student Schedule — Single-file App</title>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#0b1220; --muted:#9aa4b2; --accent:#4f46e5; --success:#10b981; --danger:#ef4444;
+      --glass: rgba(255,255,255,0.03);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071021 0%, #071328 100%);color:#e6eef8}
+    .app{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+    button{background:var(--accent);border:none;color:white;padding:8px 12px;border-radius:10px;cursor:pointer}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 20px rgba(8,12,20,0.6)}
+    .toolbar{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    input[type=search],select,input[type=number],input[type=text]{background:var(--glass);border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted)}
+
+    table{width:100%;border-collapse:collapse}
+    thead th{font-size:12px;text-align:left;padding:8px 10px;color:var(--muted);border-bottom:1px dashed rgba(255,255,255,0.03)}
+    tbody td{padding:10px;border-bottom:1px dashed rgba(255,255,255,0.03)}
+    .chip{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px}
+    .chip.mandatory{background:rgba(16,185,129,0.12);color:var(--success);border:1px solid rgba(16,185,129,0.12)}
+    .chip.optional{background:rgba(79,70,229,0.08);color:var(--accent);border:1px solid rgba(79,70,229,0.06)}
+    .actions button{margin-right:6px;background:transparent;padding:6px;border-radius:8px}
+    .small{font-size:12px;color:var(--muted)}
+
+    .expand-row{background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    .form-row{display:flex;gap:8px}
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(2,6,23,0.5), rgba(2,6,23,0.6));backdrop-filter:blur(4px)}
+    .modal-card{width:720px;background:linear-gradient(180deg, #07122a 0%, #071028 100%);padding:16px;border-radius:12px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .field{display:flex;flex-direction:column}
+    textarea{min-height:72px;padding:8px;border-radius:6px;background:var(--glass);color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
+
+    .meta{display:flex;gap:10px;align-items:center}
+    .totals{margin-left:auto;color:var(--muted);font-size:14px}
+    .file{display:none}
+
+    @media (max-width:820px){.form-grid{grid-template-columns:1fr}
+      .modal-card{width:92%}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Student Schedule</h1>
+        <div class="small">Create, view and manage timeslots with general &amp; detailed info</div>
+      </div>
+      <div class="controls">
+        <div class="meta small">
+          <div>Filter</div>
+        </div>
+        <button id="btn-new">+ Add timeslot</button>
+        <button id="btn-export" class="btn-ghost">Export JSON</button>
+        <label class="btn-ghost" style="padding:6px 8px;border-radius:8px;cursor:pointer">
+          Import
+          <input id="file-import" class="file" type="file" accept="application/json" />
+        </label>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search subject, course, teacher, grade..." style="flex:1" />
+        <select id="filterType">
+          <option value="all">All</option>
+          <option value="mandatory">Mandatory</option>
+          <option value="optional">Optional</option>
+        </select>
+        <select id="sortBy">
+          <option value="time">Sort: Time</option>
+          <option value="subject">Sort: Subject</option>
+          <option value="credits">Sort: Credits</option>
+        </select>
+        <div class="totals small" id="totals">Total credits: 0</div>
+      </div>
+
+      <div style="overflow:auto;max-height:56vh">
+        <table id="scheduleTable">
+          <thead>
+            <tr>
+              <th style="width:36px"></th>
+              <th>Time</th>
+              <th>Subject</th>
+              <th>Type</th>
+              <th>Credits</th>
+              <th>Room</th>
+              <th style="width:200px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Modal for create/edit -->
+    <div id="modal" style="display:none" class="modal" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <h3 id="modalTitle" style="margin:0">Add timeslot</h3>
+          <div style="margin-left:auto" class="small">Fields marked with * are required</div>
+        </div>
+        <form id="form">
+          <div class="form-grid">
+            <div class="field">
+              <label>Start time *</label>
+              <input required type="time" id="startTime" />
+            </div>
+            <div class="field">
+              <label>End time *</label>
+              <input required type="time" id="endTime" />
+            </div>
+            <div class="field">
+              <label>Subject *</label>
+              <input required type="text" id="subject" placeholder="e.g. Math" />
+            </div>
+            <div class="field">
+              <label>Mandatory / Optional *</label>
+              <select id="type">
+                <option value="mandatory">Mandatory</option>
+                <option value="optional">Optional</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Credits *</label>
+              <input required type="number" id="credits" min="0" step="0.5" />
+            </div>
+            <div class="field">
+              <label>Room</label>
+              <input type="text" id="room" />
+            </div>
+
+            <!-- Detailed info fields -->
+            <div class="field">
+              <label>Course name</label>
+              <input type="text" id="courseName" />
+            </div>
+            <div class="field">
+              <label>Teacher</label>
+              <input type="text" id="teacher" />
+            </div>
+            <div class="field">
+              <label>Grade</label>
+              <input type="text" id="grade" placeholder="e.g. A-, 4.0" />
+            </div>
+            <div class="field">
+              <label>Notes</label>
+              <textarea id="notes"></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+            <button type="button" id="btn-cancel" class="btn-ghost">Cancel</button>
+            <button type="submit">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <footer style="margin-top:14px;text-align:center;color:var(--muted);font-size:13px">Built with ❤️ — single-file HTML app (works offline in the browser)</footer>
+  </div>
+
+  <script>
+    // Data model: array of timeslots
+    let timeslots = [];
+    let editingId = null;
+
+    // Helpers
+    const uid = ()=>Math.random().toString(36).slice(2,9);
+    const qs = s=>document.querySelector(s);
+    const qsa = s=>Array.from(document.querySelectorAll(s));
+
+    // Sample data to demonstrate structure
+    const sample = [
+      { id:uid(), start:'08:15',end:'09:45',subject:'Calculus I',type:'mandatory',credits:5,room:'R201',details:{courseName:'MATH-101 Calculus I',teacher:'Dr. Li',grade:'',notes:'Bring calculator'}},
+      { id:uid(), start:'10:00',end:'11:30',subject:'Intro to Programming',type:'mandatory',credits:6,room:'Lab A',details:{courseName:'CS-101 Intro Programming',teacher:'Ms. Perez',grade:'A',notes:'Project due week 12'}},
+      { id:uid(), start:'12:00',end:'13:30',subject:'Art History',type:'optional',credits:3,room:'R104',details:{courseName:'AH-200 Art & Culture',teacher:'Prof. Gomez',grade:'B+',notes:''}}
+    ];
+
+    // Persistence
+    function save() {
+      localStorage.setItem('student_schedule_v1', JSON.stringify(timeslots));
+    }
+    function load(){
+      const raw = localStorage.getItem('student_schedule_v1');
+      if(raw){ try{ timeslots = JSON.parse(raw); }catch(e){ timeslots = sample; save(); }}else{ timeslots = sample; save(); }
+    }
+
+    // Render
+    function render(){
+      const tbody = qs('#tbody'); tbody.innerHTML = '';
+      const filter = qs('#filterType').value;
+      const q = qs('#search').value.trim().toLowerCase();
+      let filtered = timeslots.filter(t=>{
+        if(filter!=='all' && t.type!==filter) return false;
+        if(!q) return true;
+        const text = [t.subject, t.room, t.details?.courseName, t.details?.teacher, t.details?.grade, t.details?.notes].join(' ').toLowerCase();
+        return text.includes(q);
+      });
+
+      const sortBy = qs('#sortBy').value;
+      filtered.sort((a,b)=>{
+        if(sortBy==='time') return a.start.localeCompare(b.start) || a.end.localeCompare(b.end);
+        if(sortBy==='subject') return a.subject.localeCompare(b.subject);
+        if(sortBy==='credits') return (b.credits||0)-(a.credits||0);
+        return 0;
+      });
+
+      filtered.forEach(t=>{
+        const tr = document.createElement('tr');
+        tr.dataset.id = t.id;
+        tr.innerHTML = `
+          <td style="text-align:center"><button class="btn-ghost small expand-btn" title="Toggle details">▾</button></td>
+          <td>${t.start} — ${t.end}</td>
+          <td><strong>${escapeHtml(t.subject)}</strong><div class="small">${escapeHtml(t.details?.courseName||'')}</div></td>
+          <td><span class="chip ${t.type==='mandatory'?'mandatory':'optional'}">${t.type}</span></td>
+          <td>${t.credits ?? 0}</td>
+          <td class="small">${escapeHtml(t.room||'—')}</td>
+          <td class="actions">
+            <button class="btn-ghost" data-action="edit">✎ Edit</button>
+            <button class="btn-ghost" data-action="duplicate">⎘ Duplicate</button>
+            <button class="btn-ghost" data-action="delete">🗑 Delete</button>
+            <button class="btn-ghost" data-action="export">⇧ Export</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        // details row
+        const dtr = document.createElement('tr');
+        dtr.className='expand-row';
+        dtr.style.display='none';
+        dtr.innerHTML = `<td></td><td colspan="6">
+          <div class="detail-grid">
+            <div><strong>Teacher</strong><div class="small">${escapeHtml(t.details?.teacher||'—')}</div></div>
+            <div><strong>Grade</strong><div class="small">${escapeHtml(t.details?.grade||'—')}</div></div>
+            <div><strong>Notes</strong><div class="small">${escapeHtml(t.details?.notes||'—')}</div></div>
+            <div><strong>Course code</strong><div class="small">${escapeHtml(t.details?.courseName||'—')}</div></div>
+          </div>
+        </td>`;
+        tbody.appendChild(dtr);
+
+      });
+
+      // attach events
+      qsa('.expand-btn').forEach(btn=>btn.addEventListener('click',e=>{
+        const tr = e.target.closest('tr'); const id = tr.dataset.id;
+        const nxt = tr.nextElementSibling; nxt.style.display = (nxt.style.display==='none')? 'table-row':'none';
+      }));
+
+      qsa('[data-action]').forEach(btn=>btn.addEventListener('click',handleAction));
+
+      updateTotals();
+    }
+
+    function updateTotals(){
+      const total = timeslots.reduce((s,t)=>s+(Number(t.credits)||0),0);
+      qs('#totals').textContent = `Total credits: ${total}`;
+    }
+
+    function handleAction(e){
+      const action = e.currentTarget.dataset.action; const tr = e.currentTarget.closest('tr'); const id = tr.dataset.id;
+      const idx = timeslots.findIndex(x=>x.id===id);
+      if(idx<0) return;
+      const slot = timeslots[idx];
+      if(action==='edit'){ openModal(slot); }
+      if(action==='delete'){ if(confirm('Delete this timeslot?')){ timeslots.splice(idx,1); save(); render(); }}
+      if(action==='duplicate'){ const copy = structuredClone(slot); copy.id = uid(); timeslots.splice(idx+1,0,copy); save(); render(); }
+      if(action==='export'){ const data = JSON.stringify(slot, null, 2); downloadText(data, `${slot.subject.replace(/\s+/g,'_')}_timeslot.json`); }
+    }
+
+    // Modal controls
+    function openModal(slot=null){
+      editingId = slot?.id || null;
+      qs('#modalTitle').textContent = slot? 'Edit timeslot' : 'Add timeslot';
+      qs('#startTime').value = slot?.start || '';
+      qs('#endTime').value = slot?.end || '';
+      qs('#subject').value = slot?.subject || '';
+      qs('#type').value = slot?.type || 'mandatory';
+      qs('#credits').value = slot?.credits ?? '';
+      qs('#room').value = slot?.room || '';
+      qs('#courseName').value = slot?.details?.courseName || '';
+      qs('#teacher').value = slot?.details?.teacher || '';
+      qs('#grade').value = slot?.details?.grade || '';
+      qs('#notes').value = slot?.details?.notes || '';
+      qs('#modal').style.display = 'flex';
+    }
+    function closeModal(){ qs('#modal').style.display = 'none'; editingId = null; qs('#form').reset(); }
+
+    qs('#btn-new').addEventListener('click', ()=>openModal());
+    qs('#btn-cancel').addEventListener('click', closeModal);
+    qs('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') closeModal(); });
+
+    qs('#form').addEventListener('submit', e=>{
+      e.preventDefault();
+      const payload = {
+        id: editingId||uid(),
+        start: qs('#startTime').value,
+        end: qs('#endTime').value,
+        subject: qs('#subject').value.trim()||'Untitled',
+        type: qs('#type').value,
+        credits: Number(qs('#credits').value)||0,
+        room: qs('#room').value.trim(),
+        details: {
+          courseName: qs('#courseName').value.trim(),
+          teacher: qs('#teacher').value.trim(),
+          grade: qs('#grade').value.trim(),
+          notes: qs('#notes').value.trim()
+        }
+      };
+
+      if(editingId){
+        const idx = timeslots.findIndex(t=>t.id===editingId);
+        if(idx>=0) timeslots[idx] = payload;
+      }else{
+        timeslots.push(payload);
+      }
+      save(); render(); closeModal();
+    });
+
+    // Search / filters
+    qs('#search').addEventListener('input', render);
+    qs('#filterType').addEventListener('change', render);
+    qs('#sortBy').addEventListener('change', render);
+
+    // Export / import
+    qs('#btn-export').addEventListener('click', ()=>{ downloadText(JSON.stringify(timeslots, null, 2),'schedule.json'); });
+    qs('#file-import').addEventListener('change', async e=>{
+      const f = e.target.files[0]; if(!f) return; try{
+        const txt = await f.text(); const obj = JSON.parse(txt);
+        if(!Array.isArray(obj)) throw new Error('Invalid file');
+        timeslots = obj; save(); render(); alert('Imported schedule successfully');
+      }catch(err){ alert('Import failed: '+err.message); }
+      e.target.value = '';
+    });
+
+    // Utility: download
+    function downloadText(text, filename='export.json'){
+      const blob = new Blob([text], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    // Small escape for html
+    function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/[&<>\"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]; }); }
+
+    // load + init
+    load(); render();
+
+    // expose for debugging
+    window._timeslots = timeslots;
+  </script>
+</body>
+</html>
