@@ -1,511 +1,520 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Social Profile Editor</title>
-  <style>
-    :root{
-      --bg:#0f1724; --card:#0b1220; --muted:#94a3b8; --accent:#7c3aed; --radius:12px;
-      --shadow: 0 6px 20px rgba(16,24,40,0.08);
-    }
-    *{box-sizing:border-box}
-    body{font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; color:#e6eef8;background:linear-gradient(180deg,#071025 0%, #08121a 100%)}
-    header{display:flex;align-items:center;gap:16px;padding:18px 24px;background:transparent}
-    h1{font-size:18px;margin:0}
-
-    .app{display:grid;grid-template-columns:420px 1fr;gap:18px;padding:18px;max-width:1200px;margin:12px auto}
-
-    .panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
-    .panel h2{margin:0 0 8px 0;font-size:15px}
-    .controls{display:flex;gap:8px;flex-wrap:wrap}
-
-    form .row{display:flex;gap:8px;margin-bottom:10px}
-    label{min-width:110px;color:var(--muted);font-size:13px;padding-top:6px}
-    input[type=text], input[type=url], input[type=date], select, textarea{width:100%;min-height:56px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-
-    /* profile preview */
-    .preview{padding:22px;display:flex;gap:18px;align-items:flex-start}
-    .cover{height:140px;border-radius:10px;background:linear-gradient(90deg,#e2e8f0,#eef2ff);position:relative;overflow:hidden}
-    .cover img{width:100%;height:100%;object-fit:cover}
-    .avatar{width:120px;height:120px;border-radius:999px;border:6px solid var(--card);position:relative;transform:translateY(-60px);box-shadow:0 6px 18px rgba(2,6,23,0.12)}
-    .profile-card{background:var(--card);border-radius:12px;padding:14px;box-shadow:var(--shadow);max-width:680px}
-    .profile-head{display:flex;gap:16px;align-items:center}
-    .name{font-size:20px;margin:0}
-    .username{color:var(--muted)}
-    .bio{margin-top:8px;color:var(--muted)}
-    .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;color:var(--muted)}
-    .chip{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:13px}
-
-    .list{margin:8px 0}
-    .list-item{background:background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));;padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid #eef2f6}
-
-    .actions{display:flex;gap:8px;margin-top:12px}
-    button{background:linear-gradient(180deg,var(--accent),#5b21b6);color:white;padding:8px 12px;border-radius:10px;border:0;cursor:pointer}
-
-    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    small.note{color:var(--muted);display:block;margin-top:6px}
-
-    /* toolbar */
-    .toolbar{display:flex;gap:6px;margin-bottom:8px}
-    .toolbar button{background:#f8fafc;color:var(--muted);padding:6px;border-radius:8px;border:1px solid #e6edf3}
-
-    /* responsive */
-    @media (max-width:980px){.app{grid-template-columns:1fr;}.avatar{transform:none;}}
-    .flex{display:flex;align-items:center;gap:8px}
-    .muted{color:var(--muted)}
-
-    /* tiny helpers */
-    .small{font-size:13px}
-    a{color:var(--muted);text-decoration: underline}
-    .linklike{background:transparent;border:0;color:var(--accent);cursor:pointer}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-
-    /* tag input */
-    .tags{display:flex;gap:6px;flex-wrap:wrap;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent}
-    .tag{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:13px}
-
-    /* social links area */
-    .social-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-
-    footer{padding:12px 24px;text-align:center;color:var(--muted)}
-  </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Social Profile Editor</title>
+    <style>
+        :root{
+          --bg:#0f1724; --card:#0b1220; --muted:#94a3b8; --accent:#7c3aed; --radius:12px;
+          --shadow: 0 6px 20px rgba(16,24,40,0.08);
+        }
+        *{box-sizing:border-box}
+        body{font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; color:#e6eef8;background:linear-gradient(180deg,#071025 0%, #08121a 100%)}
+        header{display:flex;align-items:center;gap:16px;padding:18px 24px;background:transparent}
+        h1{font-size:18px;margin:0}
+    
+        .app{display:grid;grid-template-columns:420px 1fr;gap:18px;padding:18px;max-width:1200px;margin:12px auto}
+    
+        .panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+        .panel h2{margin:0 0 8px 0;font-size:15px}
+        .controls{display:flex;gap:8px;flex-wrap:wrap}
+    
+        form .row{display:flex;gap:8px;margin-bottom:10px}
+        label{min-width:110px;color:var(--muted);font-size:13px;padding-top:6px}
+        input[type=text], input[type=url], input[type=date], select, textarea{width:100%;min-height:56px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    
+        /* profile preview */
+        .preview{padding:22px;display:flex;gap:18px;align-items:flex-start}
+        .cover{height:140px;border-radius:10px;background:linear-gradient(90deg,#e2e8f0,#eef2ff);position:relative;overflow:hidden}
+        .cover img{width:100%;height:100%;object-fit:cover}
+        .avatar{width:120px;height:120px;border-radius:999px;border:6px solid var(--card);position:relative;transform:translateY(-60px);box-shadow:0 6px 18px rgba(2,6,23,0.12)}
+        .profile-card{background:var(--card);border-radius:12px;padding:14px;box-shadow:var(--shadow);max-width:680px}
+        .profile-head{display:flex;gap:16px;align-items:center}
+        .name{font-size:20px;margin:0}
+        .username{color:var(--muted)}
+        .bio{margin-top:8px;color:var(--muted)}
+        .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;color:var(--muted)}
+        .chip{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:13px}
+    
+        .list{margin:8px 0}
+        .list-item{background:background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));;padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid #eef2f6}
+    
+        .actions{display:flex;gap:8px;margin-top:12px}
+        button{background:linear-gradient(180deg,var(--accent),#5b21b6);color:white;padding:8px 12px;border-radius:10px;border:0;cursor:pointer}
+    
+        button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+        small.note{color:var(--muted);display:block;margin-top:6px}
+    
+        /* toolbar */
+        .toolbar{display:flex;gap:6px;margin-bottom:8px}
+        .toolbar button{background:#f8fafc;color:var(--muted);padding:6px;border-radius:8px;border:1px solid #e6edf3}
+    
+        /* responsive */
+        @media (max-width:980px){.app{grid-template-columns:1fr;}.avatar{transform:none;}}
+        .flex{display:flex;align-items:center;gap:8px}
+        .muted{color:var(--muted)}
+    
+        /* tiny helpers */
+        .small{font-size:13px}
+        a{color:var(--muted);text-decoration: underline}
+        .linklike{background:transparent;border:0;color:var(--accent);cursor:pointer}
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    
+        /* tag input */
+        .tags{display:flex;gap:6px;flex-wrap:wrap;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent}
+        .tag{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:13px}
+    
+        /* social links area */
+        .social-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    
+        footer{padding:12px 24px;text-align:center;color:var(--muted)}
+    </style>
 </head>
+
 <body>
-  <header>
-    <h1>Edit Profile</h1>
-    <div class="muted">Live editor + preview • export & import JSON</div>
-  </header>
+    <header>
+        <h1>Edit Profile</h1>
+        <div class="muted">Live editor + preview • export & import JSON</div>
+    </header>
 
-  <div class="app">
-    <div class="panel" id="editorPanel">
-      <h2>Profile</h2>
-      <form id="profileForm">
-        <div class="row">
-          <label>Display Name</label>
-          <input type="text" id="displayName" placeholder="e.g. Ada Lovelace" />
-        </div>
-        <div class="row">
-          <label>Username</label>
-          <input type="text" id="username" placeholder="e.g. ada_l" />
-        </div>
-        <div class="row">
-          <label>Pronouns</label>
-          <input type="text" id="pronouns" placeholder="she/her, they/them" />
-        </div>
+    <div class="app">
+        <div class="panel" id="editorPanel">
+            <h2>Profile</h2>
+            <form id="profileForm">
+                <div class="row">
+                    <label>Display Name</label>
+                    <input type="text" id="displayName" placeholder="e.g. Ada Lovelace" />
+                </div>
+                <div class="row">
+                    <label>Username</label>
+                    <input type="text" id="username" placeholder="e.g. ada_l" />
+                </div>
+                <div class="row">
+                    <label>Pronouns</label>
+                    <input type="text" id="pronouns" placeholder="she/her, they/them" />
+                </div>
 
-        <div class="row">
-          <label>Bio</label>
-          <div style="flex:1">
-            <div class="toolbar">
-              <button type="button" data-cmd="bold"><b>B</b></button>
-              <button type="button" data-cmd="italic"><i>I</i></button>
-              <button type="button" data-cmd="link">🔗</button>
-              <button type="button" id="clearBio">Clear</button>
-            </div>
-            <div id="bio" contenteditable="true" style="min-height:90px;padding:8px;border-radius:8px;border:1px solid #e6edf3;background:transparent"></div>
-            <small class="note">Use the toolbar or type. Rich text is kept in-memory and exported as HTML when exporting JSON.</small>
-          </div>
-        </div>
+                <div class="row">
+                    <label>Bio</label>
+                    <div style="flex:1">
+                        <div class="toolbar">
+                            <button type="button" data-cmd="bold"><b>B</b></button>
+                            <button type="button" data-cmd="italic"><i>I</i></button>
+                            <button type="button" data-cmd="link">🔗</button>
+                            <button type="button" id="clearBio">Clear</button>
+                        </div>
+                        <div id="bio" contenteditable="true" style="min-height:90px;padding:8px;border-radius:8px;border:1px solid #e6edf3;background:transparent"></div>
+                        <small class="note">Use the toolbar or type. Rich text is kept in-memory and exported as HTML when exporting JSON.</small>
+                    </div>
+                </div>
 
-        <div class="row">
-          <label>Location</label>
-          <input type="text" id="location" placeholder="City, Country" />
-        </div>
+                <div class="row">
+                    <label>Location</label>
+                    <input type="text" id="location" placeholder="City, Country" />
+                </div>
 
-        <div class="row">
-          <label>Website</label>
-          <input type="url" id="website" placeholder="https://" />
-        </div>
+                <div class="row">
+                    <label>Website</label>
+                    <input type="url" id="website" placeholder="https://" />
+                </div>
 
-        <div class="row">
-          <label>Birthday</label>
-          <input type="date" id="birthday" />
-        </div>
+                <div class="row">
+                    <label>Birthday</label>
+                    <input type="date" id="birthday" />
+                </div>
 
-        <div class="row">
-          <label>Profile Color</label>
-          <input type="color" id="themeColor" value="#0ea5a4" />
-        </div>
+                <div class="row">
+                    <label>Profile Color</label>
+                    <input type="color" id="themeColor" value="#0ea5a4" />
+                </div>
 
-        <div class="row">
-          <label>Avatar</label>
-          <div style="flex:1;display:flex;gap:8px;flex-wrap:wrap">
-            <input type="file" accept="image/*" id="avatarInput" />
-            <button type="button" class="linklike" id="removeAvatar">Remove</button>
-            <small class="muted">PNG, JPG. Preview is live.</small>
-          </div>
-        </div>
+                <div class="row">
+                    <label>Avatar</label>
+                    <div style="flex:1;display:flex;gap:8px;flex-wrap:wrap">
+                        <input type="file" accept="image/*" id="avatarInput" />
+                        <button type="button" class="linklike" id="removeAvatar">Remove</button>
+                        <small class="muted">PNG, JPG. Preview is live.</small>
+                    </div>
+                </div>
 
-        <div class="row">
-          <label>Cover Photo</label>
-          <div style="flex:1;display:flex;gap:8px;flex-wrap:wrap">
-            <input type="file" accept="image/*" id="coverInput" />
-            <button type="button" class="linklike" id="removeCover">Remove</button>
-            <small class="muted">Landscape preferred.</small>
-          </div>
-        </div>
+                <div class="row">
+                    <label>Cover Photo</label>
+                    <div style="flex:1;display:flex;gap:8px;flex-wrap:wrap">
+                        <input type="file" accept="image/*" id="coverInput" />
+                        <button type="button" class="linklike" id="removeCover">Remove</button>
+                        <small class="muted">Landscape preferred.</small>
+                    </div>
+                </div>
 
-        <hr />
+                <hr />
 
-        <h3 style="margin:10px 0 8px 0">Work & Education</h3>
-        <div id="experienceList"></div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button type="button" id="addWork">+ Add Work</button>
-          <button type="button" id="addEducation">+ Add Education</button>
-        </div>
+                <h3 style="margin:10px 0 8px 0">Work & Education</h3>
+                <div id="experienceList"></div>
+                <div style="display:flex;gap:8px;margin-bottom:10px">
+                    <button type="button" id="addWork">+ Add Work</button>
+                    <button type="button" id="addEducation">+ Add Education</button>
+                </div>
 
-        <hr />
+                <hr />
 
-        <h3 style="margin:10px 0 8px 0">Interests / Tags</h3>
-        <div class="row">
-          <label>Tags</label>
-          <div style="flex:1">
-            <div id="tagContainer" class="tags" tabindex="0">
-              <input type="text" id="tagInput" placeholder="Add interest and press Enter" style="border:0;outline:none;padding:6px;min-width:120px" />
-            </div>
-            <small class="muted">Press Enter to add. Click tag to remove.</small>
-          </div>
-        </div>
+                <h3 style="margin:10px 0 8px 0">Interests / Tags</h3>
+                <div class="row">
+                    <label>Tags</label>
+                    <div style="flex:1">
+                        <div id="tagContainer" class="tags" tabindex="0">
+                            <input type="text" id="tagInput" placeholder="Add interest and press Enter" style="border:0;outline:none;padding:6px;min-width:120px" />
+                        </div>
+                        <small class="muted">Press Enter to add. Click tag to remove.</small>
+                    </div>
+                </div>
 
-        <hr />
+                <hr />
 
-        <h3 style="margin:10px 0 8px 0">Social Links</h3>
-        <div class="social-grid" id="socialLinks">
-          <!-- dynamic rows -->
-        </div>
-        <div style="display:flex;gap:8px;margin-top:8px;margin-bottom:12px">
-          <button type="button" id="addSocial">+ Add Link</button>
-        </div>
+                <h3 style="margin:10px 0 8px 0">Social Links</h3>
+                <div class="social-grid" id="socialLinks">
+                    <!-- dynamic rows -->
+                </div>
+                <div style="display:flex;gap:8px;margin-top:8px;margin-bottom:12px">
+                    <button type="button" id="addSocial">+ Add Link</button>
+                </div>
 
-        <hr />
+                <hr />
 
-        <h3 style="margin:10px 0 8px 0">Privacy & Visibility</h3>
-        <div class="row">
-          <label>Profile Visibility</label>
-          <select id="visibility">
+                <h3 style="margin:10px 0 8px 0">Privacy & Visibility</h3>
+                <div class="row">
+                    <label>Profile Visibility</label>
+                    <select id="visibility">
             <option value="public">Public</option>
             <option value="followers">Followers only</option>
             <option value="private">Private</option>
           </select>
-        </div>
+                </div>
 
-        <div class="row">
-          <label>Show Activity</label>
-          <select id="showActivity">
+                <div class="row">
+                    <label>Show Activity</label>
+                    <select id="showActivity">
             <option value="yes">Yes</option>
             <option value="no">No</option>
           </select>
+                </div>
+
+                <hr />
+
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                    <button id="previewToggle" type="button" class="secondary">Toggle Compact Preview</button>
+                    <button id="exportJson" type="button">Export JSON</button>
+                    <button id="importJsonBtn" type="button" class="secondary">Import JSON</button>
+                    <input type="file" id="importJson" accept="application/json" style="display:none" />
+                </div>
+            </form>
         </div>
 
-        <hr />
+        <div class="panel" id="previewPanel">
+            <h2>Live Preview</h2>
+            <div id="preview" class="profile-card">
+                <div class="cover" id="coverPreview"></div>
+                <div style="display:flex;gap:16px;align-items:flex-start">
+                    <div class="avatar" id="avatarPreview" style="background:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--muted)">A</div>
+                    <div style="flex:1">
+                        <div class="profile-head">
+                            <div>
+                                <h3 class="name" id="pName">Your Name</h3>
+                                <div class="username" id="pUsername">@username</div>
+                            </div>
+                            <div style="margin-left:auto;text-align:right">
+                                <div class="muted" id="pPronouns">they/them</div>
+                                <div class="muted small" id="pLocation">City, Country</div>
+                            </div>
+                        </div>
+                        <div class="bio" id="pBio">Short bio goes here.</div>
+                        <div class="meta" id="pMeta">
+                            <div class="chip" id="pWebsite">website</div>
+                            <div class="chip" id="pBirthday">Birthday</div>
+                        </div>
 
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button id="previewToggle" type="button" class="secondary">Toggle Compact Preview</button>
-          <button id="exportJson" type="button">Export JSON</button>
-          <button id="importJsonBtn" type="button" class="secondary">Import JSON</button>
-          <input type="file" id="importJson" accept="application/json" style="display:none" />
+                        <div style="margin-top:12px">
+                            <h4 style="margin:6px 0">Work & Education</h4>
+                            <div id="pExperiences"></div>
+                        </div>
+
+                        <div style="margin-top:12px">
+                            <h4 style="margin:6px 0">Interests</h4>
+                            <div id="pTags" class="flex"></div>
+                        </div>
+
+                        <div style="margin-top:12px">
+                            <h4 style="margin:6px 0">Social</h4>
+                            <div id="pSocial" class="flex"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:12px">
+                <button id="downloadPng" type="button">Download Preview as PNG</button>
+                <small class="note">(may not work in all browsers)</small>
+            </div>
         </div>
-      </form>
     </div>
 
-    <div class="panel" id="previewPanel">
-      <h2>Live Preview</h2>
-      <div id="preview" class="profile-card">
-        <div class="cover" id="coverPreview"></div>
-        <div style="display:flex;gap:16px;align-items:flex-start">
-          <div class="avatar" id="avatarPreview" style="background:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--muted)">A</div>
-          <div style="flex:1">
-            <div class="profile-head">
-              <div>
-                <h3 class="name" id="pName">Your Name</h3>
-                <div class="username" id="pUsername">@username</div>
+    <footer>All rights reserved</footer>
+
+    <script>
+        // Basic in-memory profile model
+        const state = {
+          displayName: 'Ada Lovelace',
+          username: 'ada_lovelace',
+          pronouns: 'she/her',
+          bio: '<p>Engineer, mathematician, curious about computing and poetry.</p>',
+          location: 'London, UK',
+          website: 'https://example.org',
+          birthday: '1815-12-10',
+          color: '#0ea5a4',
+          avatarDataUrl: null,
+          coverDataUrl: null,
+          experiences: [
+            {type:'Work', title:'Analytical Engine Designer', org:'Babbage Labs', period:'1833–1837', description:'Worked on algorithms for the Analytical Engine.'},
+            {type:'Education', title:'Mathematics', org:'Self-study', period:'1830–1833', description:'Independent mathematical studies.'}
+          ],
+          tags:['computing','math','history'],
+          social:[{label:'Twitter',url:'https://twitter.com/example'},{label:'GitHub',url:'https://github.com/example'}],
+          visibility:'public',
+          showActivity:'yes'
+        };
+    
+        // --- utilities ---
+        const el = id => document.getElementById(id);
+    
+        function renderAll(){
+          el('displayName').value = state.displayName || '';
+          el('username').value = state.username || '';
+          el('pronouns').value = state.pronouns || '';
+          // el('bio').innerHTML = state.bio || '';
+          el('location').value = state.location || '';
+          el('website').value = state.website || '';
+          el('birthday').value = state.birthday || '';
+          el('themeColor').value = state.color || '#0ea5a4';
+          el('visibility').value = state.visibility || 'public';
+          el('showActivity').value = state.showActivity || 'yes';
+    
+          // preview
+          el('pName').textContent = state.displayName || 'Your Name';
+          el('pUsername').textContent = '@' + (state.username || 'username');
+          el('pPronouns').textContent = state.pronouns || '';
+          el('pLocation').textContent = state.location || '';
+          el('pBio').innerHTML = state.bio || '';
+          el('pWebsite').textContent = (state.website ? (new URL(state.website)).hostname : 'website');
+          el('pBirthday').textContent = state.birthday || '';
+    
+          // avatar
+          const av = el('avatarPreview');
+          if(state.avatarDataUrl){ av.style.backgroundImage = `url(${state.avatarDataUrl})`; av.style.backgroundSize='cover'; av.textContent=''; }
+          else { av.style.backgroundImage='none'; av.textContent = (state.displayName||'A').slice(0,1).toUpperCase(); }
+    
+          // cover
+          const cover = el('coverPreview');
+          if(state.coverDataUrl){ cover.style.backgroundImage = `url(${state.coverDataUrl})`; cover.style.backgroundSize='cover'; }
+          else { cover.style.backgroundImage='none'; }
+    
+          // experiences
+          const expEl = el('experienceList'); expEl.innerHTML='';
+          const pExp = el('pExperiences'); pExp.innerHTML='';
+          state.experiences.forEach((ex,i)=>{
+            // editor
+            const item = document.createElement('div'); item.className='list-item';
+            item.innerHTML = `
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>${ex.type}</strong> — ${ex.title} <div class="muted small">${ex.org} • ${ex.period}</div></div>
+                <div style="display:flex;gap:8px">
+                  <button type="button" data-i="${i}" class="editExp">Edit</button>
+                  <button type="button" data-i="${i}" class="removeExp">Remove</button>
+                </div>
               </div>
-              <div style="margin-left:auto;text-align:right">
-                <div class="muted" id="pPronouns">they/them</div>
-                <div class="muted small" id="pLocation">City, Country</div>
-              </div>
-            </div>
-            <div class="bio" id="pBio">Short bio goes here.</div>
-            <div class="meta" id="pMeta">
-              <div class="chip" id="pWebsite">website</div>
-              <div class="chip" id="pBirthday">Birthday</div>
-            </div>
-
-            <div style="margin-top:12px">
-              <h4 style="margin:6px 0">Work & Education</h4>
-              <div id="pExperiences"></div>
-            </div>
-
-            <div style="margin-top:12px">
-              <h4 style="margin:6px 0">Interests</h4>
-              <div id="pTags" class="flex"></div>
-            </div>
-
-            <div style="margin-top:12px">
-              <h4 style="margin:6px 0">Social</h4>
-              <div id="pSocial" class="flex"></div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <div style="margin-top:12px">
-        <button id="downloadPng" type="button">Download Preview as PNG</button>
-        <small class="note">(may not work in all browsers)</small>
-      </div>
-    </div>
-  </div>
-
-  <footer>All rights reserved</footer>
-
-  <script>
-    // Basic in-memory profile model
-    const state = {
-      displayName: 'Ada Lovelace',
-      username: 'ada_lovelace',
-      pronouns: 'she/her',
-      bio: '<p>Engineer, mathematician, curious about computing and poetry.</p>',
-      location: 'London, UK',
-      website: 'https://example.org',
-      birthday: '1815-12-10',
-      color: '#0ea5a4',
-      avatarDataUrl: null,
-      coverDataUrl: null,
-      experiences: [
-        {type:'Work', title:'Analytical Engine Designer', org:'Babbage Labs', period:'1833–1837', description:'Worked on algorithms for the Analytical Engine.'},
-        {type:'Education', title:'Mathematics', org:'Self-study', period:'1830–1833', description:'Independent mathematical studies.'}
-      ],
-      tags:['computing','math','history'],
-      social:[{label:'Twitter',url:'https://twitter.com/example'},{label:'GitHub',url:'https://github.com/example'}],
-      visibility:'public',
-      showActivity:'yes'
-    };
-
-    // --- utilities ---
-    const el = id => document.getElementById(id);
-
-    function renderAll(){
-      el('displayName').value = state.displayName || '';
-      el('username').value = state.username || '';
-      el('pronouns').value = state.pronouns || '';
-      el('bio').innerHTML = state.bio || '';
-      el('location').value = state.location || '';
-      el('website').value = state.website || '';
-      el('birthday').value = state.birthday || '';
-      el('themeColor').value = state.color || '#0ea5a4';
-      el('visibility').value = state.visibility || 'public';
-      el('showActivity').value = state.showActivity || 'yes';
-
-      // preview
-      el('pName').textContent = state.displayName || 'Your Name';
-      el('pUsername').textContent = '@' + (state.username || 'username');
-      el('pPronouns').textContent = state.pronouns || '';
-      el('pLocation').textContent = state.location || '';
-      el('pBio').innerHTML = state.bio || '';
-      el('pWebsite').textContent = (state.website ? (new URL(state.website)).hostname : 'website');
-      el('pBirthday').textContent = state.birthday || '';
-
-      // avatar
-      const av = el('avatarPreview');
-      if(state.avatarDataUrl){ av.style.backgroundImage = `url(${state.avatarDataUrl})`; av.style.backgroundSize='cover'; av.textContent=''; }
-      else { av.style.backgroundImage='none'; av.textContent = (state.displayName||'A').slice(0,1).toUpperCase(); }
-
-      // cover
-      const cover = el('coverPreview');
-      if(state.coverDataUrl){ cover.style.backgroundImage = `url(${state.coverDataUrl})`; cover.style.backgroundSize='cover'; }
-      else { cover.style.backgroundImage='none'; }
-
-      // experiences
-      const expEl = el('experienceList'); expEl.innerHTML='';
-      const pExp = el('pExperiences'); pExp.innerHTML='';
-      state.experiences.forEach((ex,i)=>{
-        // editor
-        const item = document.createElement('div'); item.className='list-item';
-        item.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><strong>${ex.type}</strong> — ${ex.title} <div class="muted small">${ex.org} • ${ex.period}</div></div>
-            <div style="display:flex;gap:8px">
-              <button type="button" data-i="${i}" class="editExp">Edit</button>
-              <button type="button" data-i="${i}" class="removeExp">Remove</button>
-            </div>
-          </div>
-        `;
-        expEl.appendChild(item);
-
-        // preview
-        const pItem = document.createElement('div'); pItem.className='list-item small';
-        pItem.innerHTML = `<strong>${ex.title}</strong> <div class="muted small">${ex.org} • ${ex.period}</div><div>${ex.description}</div>`;
-        pExp.appendChild(pItem);
-      });
-
-      // tags
-      const tagCon = el('tagContainer');
-      // redraw tags in container (except the input)
-      Array.from(tagCon.querySelectorAll('.tag')).forEach(t=>t.remove());
-      state.tags.forEach((t, idx)=>{
-        const span = document.createElement('span'); span.className='tag'; span.textContent = t; span.addEventListener('click', ()=>{ state.tags.splice(idx,1); renderAll(); });
-        tagCon.insertBefore(span, el('tagInput'));
-      });
-      const pTags = el('pTags'); pTags.innerHTML=''; state.tags.forEach(t=>{ const d=document.createElement('div'); d.className='chip'; d.textContent=t; pTags.appendChild(d); });
-
-      // social links editor
-      const soc = el('socialLinks'); soc.innerHTML='';
-      el('pSocial').innerHTML='';
-      state.social.forEach((s,si)=>{
-        const wrap = document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='6px';
-        const l = document.createElement('input'); l.type='text'; l.value = s.label || ''; l.placeholder='Label'; l.style.flex='0.8';
-        const u = document.createElement('input'); u.type='url'; u.value = s.url || ''; u.placeholder='https://'; u.style.flex='1';
-        const rm = document.createElement('button'); rm.textContent='Remove'; rm.addEventListener('click', ()=>{ state.social.splice(si,1); renderAll(); });
-        l.addEventListener('input', e=>{ state.social[si].label = e.target.value; renderAll(); });
-        u.addEventListener('input', e=>{ state.social[si].url = e.target.value; renderAll(); });
-        wrap.appendChild(l); wrap.appendChild(u); wrap.appendChild(rm);
-        soc.appendChild(wrap);
-
-        // preview
-        const a = document.createElement('a'); a.href = s.url || '#'; a.target='_blank'; a.className='chip'; a.textContent = s.label || s.url; el('pSocial').appendChild(a);
-      });
-
-      // apply theme color
-      document.documentElement.style.setProperty('--accent', state.color || '#0ea5a4');
-    }
-
-    // initial render
-    renderAll();
-
-    // --- input bindings ---
-    el('displayName').addEventListener('input', e=>{ state.displayName = e.target.value; renderAll(); });
-    el('username').addEventListener('input', e=>{ state.username = e.target.value.replace(/\s+/g,''); renderAll(); });
-    el('pronouns').addEventListener('input', e=>{ state.pronouns = e.target.value; renderAll(); });
-    el('location').addEventListener('input', e=>{ state.location = e.target.value; renderAll(); });
-    el('website').addEventListener('input', e=>{ state.website = e.target.value; renderAll(); });
-    el('birthday').addEventListener('input', e=>{ state.birthday = e.target.value; renderAll(); });
-    el('themeColor').addEventListener('input', e=>{ state.color = e.target.value; renderAll(); });
-
-    // bio toolbar
-    document.querySelectorAll('.toolbar button[data-cmd]').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        const cmd = b.getAttribute('data-cmd');
-        if(cmd==='bold') document.execCommand('bold');
-        if(cmd==='italic') document.execCommand('italic');
-        if(cmd==='link'){
-          const url = prompt('Enter URL'); if(url) document.execCommand('createLink', false, url);
+            `;
+            expEl.appendChild(item);
+    
+            // preview
+            const pItem = document.createElement('div'); pItem.className='list-item small';
+            pItem.innerHTML = `<strong>${ex.title}</strong> <div class="muted small">${ex.org} • ${ex.period}</div><div>${ex.description}</div>`;
+            pExp.appendChild(pItem);
+          });
+    
+          // tags
+          const tagCon = el('tagContainer');
+          // redraw tags in container (except the input)
+          Array.from(tagCon.querySelectorAll('.tag')).forEach(t=>t.remove());
+          state.tags.forEach((t, idx)=>{
+            const span = document.createElement('span'); span.className='tag'; span.textContent = t; span.addEventListener('click', ()=>{ state.tags.splice(idx,1); renderAll(); });
+            tagCon.insertBefore(span, el('tagInput'));
+          });
+          const pTags = el('pTags'); pTags.innerHTML=''; state.tags.forEach(t=>{ const d=document.createElement('div'); d.className='chip'; d.textContent=t; pTags.appendChild(d); });
+    
+          // social links editor
+          const soc = el('socialLinks'); soc.innerHTML='';
+          el('pSocial').innerHTML='';
+          state.social.forEach((s,si)=>{
+            const wrap = document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='6px';
+            const l = document.createElement('input'); l.type='text'; l.value = s.label || ''; l.placeholder='Label'; l.style.flex='0.8';
+            const u = document.createElement('input'); u.type='url'; u.value = s.url || ''; u.placeholder='https://'; u.style.flex='1';
+            const rm = document.createElement('button'); rm.textContent='Remove'; rm.addEventListener('click', ()=>{ state.social.splice(si,1); renderAll(); });
+            l.addEventListener('input', e => {
+      state.social[si].label = e.target.value;
+      // Instead of renderAll(), just update preview:
+      el('pSocial').querySelectorAll('a')[si].textContent = e.target.value;
+    });
+    
+            u.addEventListener('input', e=>{ state.social[si].url = e.target.value; el('pSocial').querySelectorAll('a')[si].textContent = e.target.value;
+     });
+            wrap.appendChild(l); wrap.appendChild(u); wrap.appendChild(rm);
+            soc.appendChild(wrap);
+    
+            // preview
+            const a = document.createElement('a'); a.href = s.url || '#'; a.target='_blank'; a.className='chip'; a.textContent = s.label || s.url; el('pSocial').appendChild(a);
+          });
+    
+          // apply theme color
+          document.documentElement.style.setProperty('--accent', state.color || '#0ea5a4');
         }
-        state.bio = el('bio').innerHTML;
+    
+        // initial render
         renderAll();
-      });
-    });
-    el('bio').addEventListener('input', e=>{ state.bio = e.target.innerHTML; renderAll(); });
-    el('clearBio').addEventListener('click', ()=>{ el('bio').innerHTML=''; state.bio=''; renderAll(); });
-
-    // avatar upload
-    el('avatarInput').addEventListener('change', e=>{
-      const f = e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = ev=>{ state.avatarDataUrl = ev.target.result; renderAll(); }; reader.readAsDataURL(f);
-    });
-    el('removeAvatar').addEventListener('click', ()=>{ state.avatarDataUrl = null; el('avatarInput').value=''; renderAll(); });
-
-    // cover upload
-    el('coverInput').addEventListener('change', e=>{ const f = e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = ev=>{ state.coverDataUrl = ev.target.result; renderAll(); }; reader.readAsDataURL(f); });
-    el('removeCover').addEventListener('click', ()=>{ state.coverDataUrl = null; el('coverInput').value=''; renderAll(); });
-
-    // experiences add/edit/remove
-    function openExpEditor(index, type){
-      const def = index!=null ? state.experiences[index] : {type:type||'Work',title:'',org:'',period:'',description:''};
-      const modal = document.createElement('div'); modal.style.position='fixed'; modal.style.inset=0; modal.style.background='rgba(2,6,23,0.4)'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center';
-      const box = document.createElement('div'); box.style.background='white'; box.style.padding='16px'; box.style.borderRadius='12px'; box.style.minWidth='320px';
-      box.innerHTML = `
-        <h3>${index!=null ? 'Edit' : 'Add'} ${def.type}</h3>
-        <div style="display:grid;gap:8px;margin-top:8px">
-          <select id="eType"><option>Work</option><option>Education</option></select>
-          <input id="eTitle" placeholder="Title (role or degree)" />
-          <input id="eOrg" placeholder="Organization / Institution" />
-          <input id="ePeriod" placeholder="Period (e.g. 2020–2023)" />
-          <textarea id="eDesc" placeholder="Short description"></textarea>
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button id="cancel">Cancel</button>
-            <button id="save">Save</button>
-          </div>
-        </div>
-      `;
-      modal.appendChild(box); document.body.appendChild(modal);
-      el('eType').value = def.type; el('eTitle').value = def.title; el('eOrg').value = def.org; el('ePeriod').value = def.period; el('eDesc').value = def.description;
-      el('cancel').addEventListener('click', ()=>{ modal.remove(); });
-      el('save').addEventListener('click', ()=>{
-        const obj = {type:el('eType').value,title:el('eTitle').value,org:el('eOrg').value,period:el('ePeriod').value,description:el('eDesc').value};
-        if(index!=null) state.experiences[index] = obj; else state.experiences.push(obj);
-        modal.remove(); renderAll();
-      });
-    }
-
-    el('addWork').addEventListener('click', ()=>openExpEditor(null,'Work'));
-    el('addEducation').addEventListener('click', ()=>openExpEditor(null,'Education'));
-    // delegate edit/remove
-    document.addEventListener('click', e=>{
-      if(e.target.classList.contains('editExp')){
-        const i = Number(e.target.getAttribute('data-i')); openExpEditor(i);
-      }
-      if(e.target.classList.contains('removeExp')){
-        const i = Number(e.target.getAttribute('data-i')); if(confirm('Remove this item?')){ state.experiences.splice(i,1); renderAll(); }
-      }
-    });
-
-    // tags input
-    el('tagInput').addEventListener('keydown', e=>{
-      if(e.key === 'Enter'){ e.preventDefault(); const v = e.target.value.trim(); if(!v) return; state.tags.push(v); e.target.value=''; renderAll(); }
-    });
-
-    // social links add
-    el('addSocial').addEventListener('click', ()=>{ state.social.push({label:'New',url:''}); renderAll(); });
-
-    // export JSON
-    el('exportJson').addEventListener('click', ()=>{
-      const copy = JSON.parse(JSON.stringify(state)); // include bio as HTML
-      const blob = new Blob([JSON.stringify(copy, null, 2)], {type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = (state.username||'profile') + '.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    });
-
-    // import JSON
-    el('importJsonBtn').addEventListener('click', ()=> el('importJson').click());
-    el('importJson').addEventListener('change', e=>{
-      const f = e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = ev=>{
-        try{ const j = JSON.parse(ev.target.result); Object.assign(state, j); renderAll(); alert('Imported'); }
-        catch(err){ alert('Invalid JSON'); }
-      }; reader.readAsText(f);
-    });
-
-    // reset
-    el('resetBtn').addEventListener('click', ()=>{ if(confirm('Reset to sample profile?')){ location.reload(); } });
-
-    // preview toggle compact
-    let compact=false;
-    el('previewToggle').addEventListener('click', ()=>{
-      compact = !compact; if(compact) el('preview').style.maxWidth='480px'; else el('preview').style.maxWidth='none';
-    });
-
-    // download preview as PNG (lightweight in-browser approach)
-    el('downloadPng').addEventListener('click', async ()=>{
-      try{
-        // use html2canvas-style rendering using browser API where possible
-        const node = el('preview');
-        const scale = 2; const rect = node.getBoundingClientRect();
-        const canvas = document.createElement('canvas'); canvas.width = rect.width * scale; canvas.height = rect.height * scale; const ctx = canvas.getContext('2d');
-        // fill background
-        ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
-        // draw using foreignObject (works in modern browsers for simple content)
-        const data = `data:text/html;charset=utf-8,` + encodeURIComponent(`<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;font-family:Inter,Arial}</style></head><body>${node.innerHTML}</body></html>`);
-        const img = new Image(); img.onload = ()=>{ ctx.drawImage(img,0,0,canvas.width,canvas.height); const a = document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download = (state.username||'profile') + '.png'; document.body.appendChild(a); a.click(); a.remove(); };
-        img.onerror = ()=>alert('Preview export failed in this browser.'); img.src = data;
-      }catch(err){ alert('Export failed: ' + err.message); }
-    });
-
-    // small accessibility/UX improvements
-    // ensure state.bio is updated on paste
-    el('bio').addEventListener('paste', ()=> setTimeout(()=>{ state.bio = el('bio').innerHTML; renderAll(); }, 50));
-
-    // expose sample JSON convenience
-    window.getProfileState = ()=> JSON.parse(JSON.stringify(state));
-  </script>
+    
+        // --- input bindings ---
+        el('displayName').addEventListener('input', e=>{ state.displayName = e.target.value; renderAll(); });
+        el('username').addEventListener('input', e=>{ state.username = e.target.value.replace(/\s+/g,''); renderAll(); });
+        el('pronouns').addEventListener('input', e=>{ state.pronouns = e.target.value; renderAll(); });
+        el('location').addEventListener('input', e=>{ state.location = e.target.value; renderAll(); });
+        el('website').addEventListener('input', e=>{ state.website = e.target.value; renderAll(); });
+        el('birthday').addEventListener('input', e=>{ state.birthday = e.target.value; renderAll(); });
+        el('themeColor').addEventListener('input', e=>{ state.color = e.target.value; renderAll(); });
+    
+        // bio toolbar
+        document.querySelectorAll('.toolbar button[data-cmd]').forEach(b=>{
+          b.addEventListener('click', ()=>{
+            const cmd = b.getAttribute('data-cmd');
+            if(cmd==='bold') document.execCommand('bold');
+            if(cmd==='italic') document.execCommand('italic');
+            if(cmd==='link'){
+              const url = prompt('Enter URL'); if(url) document.execCommand('createLink', false, url);
+            }
+            state.bio = el('bio').innerHTML;
+            renderAll();
+          });
+        });
+        el('bio').addEventListener('input', e=>{ state.bio = e.target.innerHTML; renderAll(); });
+        el('clearBio').addEventListener('click', ()=>{ el('bio').innerHTML=''; state.bio=''; renderAll(); });
+    
+        // avatar upload
+        el('avatarInput').addEventListener('change', e=>{
+          const f = e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = ev=>{ state.avatarDataUrl = ev.target.result; renderAll(); }; reader.readAsDataURL(f);
+        });
+        el('removeAvatar').addEventListener('click', ()=>{ state.avatarDataUrl = null; el('avatarInput').value=''; renderAll(); });
+    
+        // cover upload
+        el('coverInput').addEventListener('change', e=>{ const f = e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = ev=>{ state.coverDataUrl = ev.target.result; renderAll(); }; reader.readAsDataURL(f); });
+        el('removeCover').addEventListener('click', ()=>{ state.coverDataUrl = null; el('coverInput').value=''; renderAll(); });
+    
+        // experiences add/edit/remove
+        function openExpEditor(index, type){
+          const def = index!=null ? state.experiences[index] : {type:type||'Work',title:'',org:'',period:'',description:''};
+          const modal = document.createElement('div'); modal.style.position='fixed'; modal.style.inset=0; modal.style.background='rgba(2,6,23,0.4)'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center';
+          const box = document.createElement('div'); box.style.background='white'; box.style.padding='16px'; box.style.borderRadius='12px'; box.style.minWidth='320px';
+          box.innerHTML = `
+            <h3>${index!=null ? 'Edit' : 'Add'} ${def.type}</h3>
+            <div style="display:grid;gap:8px;margin-top:8px">
+              <select id="eType"><option>Work</option><option>Education</option></select>
+              <input id="eTitle" placeholder="Title (role or degree)" />
+              <input id="eOrg" placeholder="Organization / Institution" />
+              <input id="ePeriod" placeholder="Period (e.g. 2020–2023)" />
+              <textarea id="eDesc" placeholder="Short description"></textarea>
+              <div style="display:flex;gap:8px;justify-content:flex-end">
+                <button id="cancel">Cancel</button>
+                <button id="save">Save</button>
+              </div>
+            </div>
+          `;
+          modal.appendChild(box); document.body.appendChild(modal);
+          el('eType').value = def.type; el('eTitle').value = def.title; el('eOrg').value = def.org; el('ePeriod').value = def.period; el('eDesc').value = def.description;
+          el('cancel').addEventListener('click', ()=>{ modal.remove(); });
+          el('save').addEventListener('click', ()=>{
+            const obj = {type:el('eType').value,title:el('eTitle').value,org:el('eOrg').value,period:el('ePeriod').value,description:el('eDesc').value};
+            if(index!=null) state.experiences[index] = obj; else state.experiences.push(obj);
+            modal.remove(); renderAll();
+          });
+        }
+    
+        el('addWork').addEventListener('click', ()=>openExpEditor(null,'Work'));
+        el('addEducation').addEventListener('click', ()=>openExpEditor(null,'Education'));
+        // delegate edit/remove
+        document.addEventListener('click', e=>{
+          if(e.target.classList.contains('editExp')){
+            const i = Number(e.target.getAttribute('data-i')); openExpEditor(i);
+          }
+          if(e.target.classList.contains('removeExp')){
+            const i = Number(e.target.getAttribute('data-i')); if(confirm('Remove this item?')){ state.experiences.splice(i,1); renderAll(); }
+          }
+        });
+    
+        // tags input
+        el('tagInput').addEventListener('keydown', e=>{
+          if(e.key === 'Enter'){ e.preventDefault(); const v = e.target.value.trim(); if(!v) return; state.tags.push(v); e.target.value=''; renderAll(); }
+        });
+    
+        // social links add
+        el('addSocial').addEventListener('click', ()=>{ state.social.push({label:'New',url:''}); renderAll(); });
+    
+        // export JSON
+        el('exportJson').addEventListener('click', ()=>{
+          const copy = JSON.parse(JSON.stringify(state)); // include bio as HTML
+          const blob = new Blob([JSON.stringify(copy, null, 2)], {type:'application/json'});
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = (state.username||'profile') + '.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        });
+    
+        // import JSON
+        el('importJsonBtn').addEventListener('click', ()=> el('importJson').click());
+        el('importJson').addEventListener('change', e=>{
+          const f = e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = ev=>{
+            try{ const j = JSON.parse(ev.target.result); Object.assign(state, j); renderAll(); alert('Imported'); }
+            catch(err){ alert('Invalid JSON'); }
+          }; reader.readAsText(f);
+        });
+    
+        // reset
+        el('resetBtn').addEventListener('click', ()=>{ if(confirm('Reset to sample profile?')){ location.reload(); } });
+    
+        // preview toggle compact
+        let compact=false;
+        el('previewToggle').addEventListener('click', ()=>{
+          compact = !compact; if(compact) el('preview').style.maxWidth='480px'; else el('preview').style.maxWidth='none';
+        });
+    
+        // download preview as PNG (lightweight in-browser approach)
+        el('downloadPng').addEventListener('click', async ()=>{
+          try{
+            // use html2canvas-style rendering using browser API where possible
+            const node = el('preview');
+            const scale = 2; const rect = node.getBoundingClientRect();
+            const canvas = document.createElement('canvas'); canvas.width = rect.width * scale; canvas.height = rect.height * scale; const ctx = canvas.getContext('2d');
+            // fill background
+            ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            // draw using foreignObject (works in modern browsers for simple content)
+            const data = `data:text/html;charset=utf-8,` + encodeURIComponent(`<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;font-family:Inter,Arial}</style></head><body>${node.innerHTML}</body></html>`);
+            const img = new Image(); img.onload = ()=>{ ctx.drawImage(img,0,0,canvas.width,canvas.height); const a = document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download = (state.username||'profile') + '.png'; document.body.appendChild(a); a.click(); a.remove(); };
+            img.onerror = ()=>alert('Preview export failed in this browser.'); img.src = data;
+          }catch(err){ alert('Export failed: ' + err.message); }
+        });
+    
+        // small accessibility/UX improvements
+        // ensure state.bio is updated on paste
+        el('bio').addEventListener('paste', ()=> setTimeout(()=>{ state.bio = el('bio').innerHTML; renderAll(); }, 50));
+    
+        // expose sample JSON convenience
+        window.getProfileState = ()=> JSON.parse(JSON.stringify(state));
+    </script>
 </body>
+
 </html>
