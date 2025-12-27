@@ -1,0 +1,54 @@
+:root {
+  --bg: black;
+  --buttons: gray;
+}
+
+* {
+  color: white;
+}
+
+body {
+  border-style: groove;
+  margin: 8em;
+  padding: 10px;
+}
+
+hr {
+  border: none;
+  border-top: 3px double white;
+  color: white;
+  overflow: visible;
+  text-align: center;
+  height: 15px;
+}
+
+hr::after {
+  background: black;
+  color: white;
+  content: "§";
+  padding: 0 4px;
+  position: relative;
+  top: -13px;
+}
+
+
+body {
+  background-color: var(--bg);
+}
+
+input[type="text"], input[type="password"] {
+  background-color: var(--bg);
+}
+
+input, button, select, option {
+  border-style: groove;
+  background-color: black;
+}
+
+button:hover {
+  border-style: inset;
+}
+
+button:disabled {
+  color: grey;
+}
