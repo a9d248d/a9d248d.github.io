@@ -1,15 +1,19 @@
 :root {
   --bg: black;
   --buttons: gray;
+  font-family: 'Times New Roman';
 }
 
 * {
   color: white;
 }
 
-body {
+main {
   border-style: groove;
-  margin: 8em;
+  margin-left: 8em;
+  margin-right: 10em;
+  margin-top: 2em;
+  margin-bottom: 2em;
   padding: 10px;
 }
 
@@ -25,7 +29,8 @@ hr {
 hr::after {
   background: black;
   color: white;
-  content: "§";
+  content: "SS";
+  font-family: 'Pure evil 2';
   padding: 0 4px;
   position: relative;
   top: -13px;
@@ -33,11 +38,11 @@ hr::after {
 
 
 body {
-  background-color: var(--bg);
+  background-color: black;
 }
 
 input[type="text"], input[type="password"] {
-  background-color: var(--bg);
+  background-color: black;
 }
 
 input, button, select, option {
@@ -52,3 +57,11 @@ button:hover {
 button:disabled {
   color: grey;
 }
+
+header {
+  display: flex;
+}
+
+header > div {
+  margin: 10px;
+} 
