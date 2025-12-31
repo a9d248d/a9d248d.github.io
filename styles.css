@@ -1,0 +1,50 @@
+:root { background-color: black; color: white; font-family: 'Times New Roman'; }
+@counter-style circled-alpha { system: fixed; symbols: Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ; suffix: " "; }
+main { margin: 8em; padding: 10px; border: 5px double white; }
+h2::before { content: 'S '; font-family: 'Pure evil 2'; }
+h3::before { content: 's '; font-family: 'Pure evil 2'; }
+p { line-height: 1.6; margin: 1em 0; text-align: justify; }
+hr { border: none; border-top: 5px double white; color: white; overflow: visible; text-align: center; height: 5px; }
+hr::after { background: black; content: "SS"; padding: 0 4px; position: relative; top: -13px; font-family: 'Pure evil 2'; }
+iframe, video { border: 5px double white; padding: 10px; width: calc(100% - 30px); max-width: 560px; aspect-ratio: auto; }
+video::cue { font-size: 1rem; }
+aside { float: right; color: grey; border-left: 5px double grey; padding-left: 10px; margin: 2em; max-width: 50%; }
+time, address { color: grey; }
+q { quotes: "«" "»" "‹" "›"; }
+blockquote { margin: 2em; padding-left: 1em; border-left: 5px double grey; color: grey; font-style: italic; }
+blockquote::before { content: "« "; color: silver; font-size: 2em; }
+blockquote::after { content: " »"; color: silver; font-size: 2em; }
+a:link { color: darkorange; }
+a:visited { color: orange; }
+a:hover { color: yellow; }
+a:active { color: red; }
+code, pre { color: darkgreen; }
+details { color: grey; border-left: 5px double grey; padding-left: 10px; }
+details summary::marker { content: "+ "; color: darkgreen; font-family: monospace; font-weight: bold; font-size: 2em; }
+details:open summary::marker { content: "- "; color: darkred; font-family: monospace; font-weight: bold; font-size: 2em; }
+ol { list-style-type: upper-roman; }
+ul, ol { margin-left: 2em; color: silver; }
+li::marker { color: grey; display: inline-block; }
+del { color: darkred; float: left; padding: 10px; }
+ins { color: darkgreen; float: right; padding: 10px; }
+table { width: 100%; border-collapse: collapse; margin: 2em 0; color: silver; }
+caption { caption-side: bottom; color: grey; font-style: italic; padding-top: 0.5em; }
+th, td { border: 3px double white; padding: 0.5em 1em; }
+th { text-align: left; color: white; }
+tbody tr:nth-child(even) { background-color: #111; }
+form { border: 5px double white; padding: 2em; margin: 2em 0; }
+label { display: block; margin-top: 1em; color: grey; }
+input, textarea, select { width: 100%; background-color: black; color: white; border: 3px double grey; padding: 0.5em; font-family: inherit; }
+textarea { resize: vertical; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: white; }
+button { background-color: black; color: darkorange; border: 5px double darkorange; padding: 0.5em 1.5em; margin-top: 1em; font-family: inherit; cursor: pointer; }
+button:hover { color: yellow; border-color: yellow; }
+button:active { color: red; border-color: red; }
+::selection { text-decoration: grey wavy underline; color: grey; }
+aside::selection, time::selection, address::selection, details::selection, summary::selection, blockquote::selection { text-decoration: silver wavy underline; color: silver; }
+a::selection { text-decoration: red wavy underline; color: red; }
+ins::selection { text-decoration: green wavy underline; color: green; }
+del::selection { text-decoration: red wavy underline; color: red; }
+code::selection, pre::selection { text-decoration: darkred wavy underline; color: darkred; }
+*:disabled, *:disabled:hover, *:disabled:active { color: darkslategrey; border-color: darkslategrey; cursor: not-allowed; }
+@media (max-width: 600px) { aside { float: none; } main { margin: 2em; } }
