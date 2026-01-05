@@ -34,7 +34,7 @@ th { text-align: left; color: white; }
 tbody tr:nth-child(even) { background-color: #111; }
 form { border: 5px double white; padding: 2em; margin: 2em 0; }
 label { display: block; margin-top: 1em; color: grey; }
-input, textarea, select { width: 100%; background-color: black; color: white; border: 3px double grey; padding: 0.5em; font-family: inherit; }
+input, textarea, select { width: 50%; background-color: black; color: white; border: 3px double grey; padding: 0.5em; font-family: inherit; }
 textarea { resize: vertical; }
 input:focus, textarea:focus, select:focus { outline: none; border-color: white; }
 button { background-color: black; color: darkorange; border: 5px double darkorange; padding: 0.5em 1.5em; margin-top: 1em; font-family: inherit; cursor: pointer; }
